@@ -1,0 +1,15 @@
+[package]
+name = "helper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nested_helper = { path = "../nested_helper" }
+
+[[bin]]
+name = "helper_bin"
+path = "src/main.rs"
+
+[lib]
+name = "helper"
+path = "src/lib.rs"

@@ -1,0 +1,9 @@
+# Example Amber configuration file.
+# Copy this into the root of a Rust project as `.amber.toml`.
+
+threshold = 60
+
+[policy]
+required = ["serde"]
+forbidden = ["deprecated_crate"]
+strict = false

@@ -1,0 +1,7 @@
+# Sample Amber configuration for the demo fixture.
+threshold = 50
+
+[policy]
+required = ["serde"]
+forbidden = []
+strict = false

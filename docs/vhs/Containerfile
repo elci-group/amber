@@ -1,0 +1,85 @@
+# syntax=docker/dockerfile:1
+#
+# Reproducible, host-agnostic recorder for Amber's README/website demos.
+#
+# The amber binary is produced on the developer's host (docs/vhs/build.sh runs
+# `cargo build --release`) and copied into the image. amber declares an optional
+# path dependency on a sibling crate (padagonia) that lives outside this repo,
+# so compiling amber *inside* the image would either require the developer's
+# local directory layout or a fragile lock-file dance; copying the finished
+# binary keeps the build self-contained and the recording generic.
+#
+# The runtime base is Debian trixie, whose glibc (2.41) is at least as new as a
+# typical developer host's, so the host-built binary runs unchanged. Inside the
+# image everything executes under /work with a neutral prompt; no host path,
+# username, or setup detail appears on screen. The only host mount is the output
+# directory used to collect the rendered GIFs.
+#
+# Build & run: docs/vhs/build.sh --docker
+
+ARG RUST_VERSION=1.88
+ARG VHS_VERSION=0.11.0
+ARG TTYD_VERSION=1.7.7
+
+FROM rust:${RUST_VERSION}-trixie
+
+ARG VHS_VERSION
+ARG TTYD_VERSION
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        ffmpeg \
+        fontconfig \
+        fonts-dejavu-core \
+        fonts-liberation \
+        chromium \
+        chromium-sandbox \
+    && rm -rf /var/lib/apt/lists/*
+
+# vhs renders the terminal by driving a headless Chromium (via go-rod). Pin
+# go-rod to the system Chromium so browser and libraries stay in sync.
+ENV ROD_BROWSER_BIN=/usr/bin/chromium
+
+# ttyd (static binary) and vhs (release tarball). The vhs tarball layout has
+# changed between releases, so locate the binary by name rather than by path.
+RUN curl -fsSL "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" \
+        -o /usr/local/bin/ttyd \
+    && chmod +x /usr/local/bin/ttyd \
+    && tmpdir="$(mktemp -d)" \
+    && curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/vhs_${VHS_VERSION}_Linux_x86_64.tar.gz" \
+        -o "$tmpdir/vhs.tar.gz" \
+    && tar -xzf "$tmpdir/vhs.tar.gz" -C "$tmpdir" \
+    && install -m 0755 "$(find "$tmpdir" -type f -name vhs | head -n1)" /usr/local/bin/vhs \
+    && rm -rf "$tmpdir"
+
+# Pre-built amber binary (produced by build.sh on the host).
+COPY target/release/amber /usr/local/bin/amber
+
+# Fixture plus a pre-warmed, offline cargo cache so `cargo metadata` (driven by
+# amber) resolves without network at record time.
+COPY docs/vhs/fixture /work/fixture
+RUN mkdir -p /opt/cargo \
+    && CARGO_HOME=/opt/cargo cargo fetch --manifest-path /work/fixture/Cargo.toml --locked
+
+COPY docs/vhs/tapes /work/tapes
+
+WORKDIR /work
+ENV CARGO_HOME=/opt/cargo \
+    CARGO_NET_OFFLINE=true \
+    RUST_LOG=error
+
+# Run unprivileged: headless Chromium refuses to start as root. UID 1000
+# matches a typical single-user host so the bind-mounted output directory
+# stays writable. cargo/rustc are symlinked into /usr/local/bin so amber can
+# spawn `cargo metadata` even from a login shell whose /etc/profile resets PATH.
+RUN ln -sf /usr/local/cargo/bin/cargo /usr/local/bin/cargo \
+    && ln -sf /usr/local/cargo/bin/rustc /usr/local/bin/rustc \
+    && mkdir -p /work/out \
+    && useradd -m -u 1000 -s /bin/bash vhs \
+    && chown -R vhs:vhs /work
+USER vhs
+
+ENTRYPOINT ["/bin/bash", "-lc", "for t in /work/tapes/*.tape; do vhs \"$t\"; done"]

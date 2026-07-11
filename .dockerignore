@@ -1,0 +1,19 @@
+# Keep the docs/vhs container build context small and host-agnostic.
+# The container consumes the prebuilt amber binary, so only that single
+# artifact is allowed through from target/.
+target/*
+!target/release/
+target/release/*
+!target/release/amber
+.git/
+.amber/
+.kaptaind/
+amber_out/
+amber_proposals/
+benches_out/
+docs/vhs/out/
+docs/vhs/out-hostbackup/
+website/
+*.gif
+tarpaulin-report.html
+lcov.info

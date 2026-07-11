@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Download Amber releases, installers, and source code." />
+  <title>Downloads — Amber</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="logo" href="index.html">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Amber
+      </a>
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="downloads.html" class="active">Downloads</a></li>
+        <li><a href="pricing.html">Amber Pro</a></li>
+        <li><a href="https://github.com/seriousaboutsolutions/amber" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a class="nav-cta" href="pricing.html">Upgrade to Pro</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero" style="padding-bottom: 4rem;">
+    <div class="hero-content">
+      <h1>Download <span>Amber</span></h1>
+      <p>Grab the latest stable release, try a pre-release, or browse deprecated source archives.</p>
+    </div>
+  </header>
+
+  <main class="section" style="padding-top: 0;">
+    <div class="container">
+      <div class="text-center" style="margin-bottom: 2rem;">
+        <button class="btn btn-secondary active" data-filter="all">All</button>
+        <button class="btn btn-secondary" data-filter="stable">Stable</button>
+        <button class="btn btn-secondary" data-filter="prerelease">Pre-releases</button>
+        <button class="btn btn-danger" data-filter="deprecated">Deprecated</button>
+      </div>
+
+      <div id="releases-container">
+        <p class="text-center" style="color: var(--text-muted);">Loading releases…</p>
+      </div>
+
+      <div class="card mt-2">
+        <h3>Build from source</h3>
+        <p style="color: var(--text-muted);">You can also install or build Amber directly with Rust’s package manager.</p>
+        <pre style="background: var(--surface); padding: 1rem; border-radius: 0.5rem; overflow-x: auto;"><code style="color: var(--amber-300);">cargo install amber</code></pre>
+        <p style="color: var(--text-muted); margin-top: 1rem;">
+          Or clone the repository and run <code style="background: var(--surface); padding: 0.15rem 0.35rem; border-radius: 0.25rem;">cargo build --release</code>.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="downloads.html">Downloads</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="https://github.com/seriousaboutsolutions/amber" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <p>© <span id="year"></span> Amber. MIT licensed.</p>
+  </footer>
+
+  <script src="js/releases.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    menuToggle.addEventListener('click', () => {
+      const isOpen = navLinks.classList.toggle('open');
+      menuToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  </script>
+</body>
+</html>

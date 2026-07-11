@@ -1,0 +1,179 @@
+.TH AMBER 1 "2026-07-09" "amber 0.2.6" "User Commands"
+.SH NAME
+amber \- dependency garbage collector for Rust
+.SH SYNOPSIS
+.B amber
+[\fIOPTIONS\fR]
+[\fIPATH\fR]
+[\fICOMMAND\fR]
+.SH DESCRIPTION
+.B amber
+analyzes a Cargo project, detects how each third-party crate is used, scores
+every dependency for replaceability, and generates validated, drop-in
+replacement modules for common utility crates.
+.PP
+Generated replacements are emitted as
+.BI amber_ <crate> _redux
+modules and are checked with
+.B cargo check
+before they are reported, so a proposal that does not compile never reaches
+you. Crate names containing hyphens are normalised to underscores in the
+module name.
+.SH OPTIONS
+.TP
+.BI \-f " format" "\fR, \fB\-\-format " format
+Output format: \fBconsole\fR (default), \fBjson\fR, \fBpr\fR, \fBsarif\fR, or
+\fBemoji\fR.
+.TP
+.B \-\-emoji
+Shorthand for \fB\-\-format emoji\fR.
+.TP
+.BI \-t " n" "\fR, \fB\-\-threshold " n
+Minimum replaceability score (0\-100) a dependency must reach to be flagged.
+Used with \fB\-\-propose\fR to control proposal volume. Default: 50.
+.TP
+.B \-T\fR, \fB\-\-transitive
+Include transitive dependencies in the report.
+.TP
+.B \-p\fR, \fB\-\-propose
+After scoring, generate validated replacement modules for every dependency at
+or above \fB\-\-threshold\fR.
+.TP
+.B \-\-no\-dev
+Exclude dev-dependencies from analysis.
+.TP
+.BI \-c " crates" "\fR, \fB\-\-crates " crates
+Restrict analysis to the named crates. Accepts a comma-separated list or
+repeated flags.
+.TP
+.BI \-\-config " path
+Path to an Amber configuration file. Defaults to
+.B .amber.toml
+in the target project root.
+.TP
+.B \-v\fR, \fB\-\-verbose\fR ...
+Increase verbosity. Repeat for more detail (\fB\-v\fR debug, \fB\-vv\fR trace).
+.TP
+.B \-h\fR, \fB\-\-help
+Print help. \fB\-h\fR prints a summary; \fB\-\-help\fR prints the full text.
+.TP
+.B \-V\fR, \fB\-\-version
+Print the version.
+.PP
+When built with the \fBlibrary\fR feature, \fB\-\-library\fR / \fB\-\-no\-library\fR
+toggle the Padagonia replacement library. When built with the \fBonline\fR
+feature, \fB\-\-online\fR fetches live crates.io metadata.
+.SH COMMANDS
+.TP
+.B analyze
+Run the full pipeline and emit a report in the selected \fB\-\-format\fR.
+Exits non-zero in strict mode when a policy is violated. Supports
+.BI \-o " file"
+to write the report to a file.
+.TP
+.BI score " crate"
+Score one crate across usage simplicity, transitive value, security,
+maintenance, testability, and API surface, then print the breakdown.
+.TP
+.B list
+List all dependencies with usage statistics.
+.TP
+.BI replace " crate" " [\fB\-o\fR dir]"
+Generate a validated
+.BI amber_ <crate> _redux
+module and write it under the output directory (default
+.BR amber_out ).
+.TP
+.B roadmap
+Show Amber's internal module roadmap.
+.TP
+.BI directives " crate" " [\fB\-o\fR file]"
+Emit a focused, implementation-ready directive describing how to replace the
+named crate.
+.TP
+.B library
+(\fBlibrary\fR feature) Manage the Padagonia replacement module library:
+\fBlist\fR, \fBimport\fR, \fBexport\fR.
+.SH OUTPUT FORMATS
+.TP
+.B console
+Human-readable table (default).
+.TP
+.B json
+Machine-readable report for tooling.
+.TP
+.B pr
+Markdown suitable for a pull-request comment.
+.TP
+.B sarif
+Static Analysis Results Interchange Format, for CI ingestion.
+.TP
+.B emoji
+Compact, friendly summary.
+.SH CONFIGURATION
+.B amber
+reads
+.B .amber.toml
+from the target project root (or the path given to \fB\-\-config\fR):
+.PP
+.RS
+.nf
+threshold = 60
+
+[policy]
+required = ["serde"]
+forbidden = ["deprecated_crate"]
+strict = false
+.fi
+.RE
+.SH EXIT STATUS
+.TP
+.B 0
+Success; no policy violations.
+.TP
+.B 1
+Analysis found policy violations (strict mode).
+.TP
+.B 2
+A command, parse, or I/O error occurred.
+.SH FILES
+.TP
+.B .amber.toml
+Per-project configuration.
+.TP
+.B amber_out/
+Default directory for generated replacement modules.
+.TP
+.B docs/man/amber.1
+This manual page.
+.SH ENVIRONMENT
+.TP
+.B RUST_LOG
+Controls tracing output. Demos set \fBRUST_LOG=error\fR for clean frames.
+.SH EXAMPLES
+.nf
+# Analyze the current project
+amber
+
+# Machine-readable report of a specific project
+amber \-\-format json /path/to/project
+
+# Propose replacements for high-scoring crates
+amber \-\-propose \-\-threshold 70
+
+# Score a single crate
+amber score anyhow
+
+# Generate a validated replacement module
+amber replace serde \-\-out-dir out
+
+# Scoped replacement directive for CI review
+amber directives colored \-o colored.md
+.fi
+.SH SEE ALSO
+.BR cargo (1)
+.PP
+Reproducible demo recordings: \fBdocs/vhs/README.md\fR.
+Project documentation index: \fBdocs/README.md\fR.
+.SH AUTHOR
+Amber contributors. MIT licence.

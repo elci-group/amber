@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Amber — the autonomous dependency reduction engine for Rust. Scan, score, replace, and validate your dependencies." />
+  <title>Amber — Dependency Garbage Collector for Rust</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="logo" href="index.html">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Amber
+      </a>
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="downloads.html">Downloads</a></li>
+        <li><a href="pricing.html">Amber Pro</a></li>
+        <li><a href="https://github.com/seriousaboutsolutions/amber" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a class="nav-cta" href="pricing.html">Upgrade to Pro</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-content">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        New: emoji output mode for terminal sharing 🚀
+      </div>
+      <h1>Cut the dependency bloat.<br><span>Reclaim your builds.</span></h1>
+      <p>
+        Amber scans your Rust projects, scores every dependency for replaceability,
+        and generates validated replacement proposals — so you ship leaner, safer crates.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="downloads.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Amber
+        </a>
+        <a class="btn btn-secondary" href="pricing.html">Explore Amber Pro</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="section-title">
+          <h2>From audit to replacement in minutes</h2>
+          <p>Amber automates the tedious work of dependency analysis and gives you actionable, tested replacement plans.</p>
+        </div>
+        <div class="features-grid">
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <h3>1. Scan</h3>
+            <p>Index every crate in your workspace and trace how each dependency is actually used in your source.</p>
+          </article>
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            <h3>2. Score</h3>
+            <p>Get a replaceability score based on usage complexity, transitive weight, security risk, and maintenance burden.</p>
+          </article>
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            <h3>3. Propose</h3>
+            <p>Generate drop-in replacement stubs and migration guides for the crates you can safely remove.</p>
+          </article>
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <h3>4. Validate</h3>
+            <p>Every generated replacement is checked with <code>cargo check</code> before you ever commit it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background: var(--bg-elevated);">
+      <div class="container">
+        <div class="section-title">
+          <h2>Amber Pro</h2>
+          <p>Supercharge Amber with Groq LPU-powered fast inference for instant scoring, natural-language migration plans, and team-wide policy enforcement.</p>
+        </div>
+        <div class="features-grid">
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <h3>Groq LPU Inference</h3>
+            <p>Sub-second AI reasoning on every proposal, powered by Groq’s low-latency Language Processing Units.</p>
+          </article>
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <h3>Team Policies</h3>
+            <p>Define required and forbidden crates across every repository in your organization.</p>
+          </article>
+          <article class="card">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <h3>CI/CD Integrations</h3>
+            <p>Run Amber in GitHub Actions, GitLab CI, or any pipeline with SARIF and JSON reports.</p>
+          </article>
+        </div>
+        <div class="text-center mt-2">
+          <a class="btn btn-primary" href="pricing.html">See Amber Pro plans</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-title">
+          <h2>Install in seconds</h2>
+          <p>Prefer the command line? Grab Amber with cargo or download a pre-built installer.</p>
+        </div>
+        <div class="card" style="max-width: 720px; margin: 0 auto; text-align: center;">
+          <pre style="background: var(--surface); padding: 1rem; border-radius: 0.5rem; overflow-x: auto;"><code style="color: var(--amber-300);">cargo install amber</code></pre>
+          <p class="text-center" style="color: var(--text-muted); margin-top: 1rem;">
+            Or download the latest release for Windows, macOS, or Linux.
+          </p>
+          <a class="btn btn-secondary" href="downloads.html" style="margin-top: 0.5rem;">Go to downloads</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="background: var(--bg-elevated);">
+      <div class="container">
+        <div class="section-title">
+          <h2>See it in action</h2>
+          <p>Amber’s new emoji output mode makes reports pop in the terminal — perfect for demos, READMEs, and social sharing.</p>
+        </div>
+        <div class="gif-grid">
+          <article class="gif-card">
+            <img src="assets/vhs/amber-emoji-analyze.gif" alt="Amber emoji-mode analyze report" loading="lazy" />
+            <p>Run <code>amber --format emoji analyze</code> for a rich, emoji-filled dependency report.</p>
+          </article>
+          <article class="gif-card">
+            <img src="assets/vhs/amber-emoji-score.gif" alt="Amber emoji-mode score card" loading="lazy" />
+            <p>Run <code>amber --format emoji score &lt;crate&gt;</code> to share a score card in seconds.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-title">
+          <h2>Website preview</h2>
+          <p>Amber’s home on the web looks great on desktop and mobile — dark mode by default, fast, and fully responsive.</p>
+        </div>
+        <div class="gif-grid">
+          <article class="gif-card">
+            <img src="assets/screenshots/amber-website-hero.png" alt="Amber website hero section on desktop" loading="lazy" />
+            <p>Desktop hero section with the new emoji-mode announcement badge.</p>
+          </article>
+          <article class="gif-card">
+            <img src="assets/screenshots/amber-website-mobile.png" alt="Amber website on mobile" loading="lazy" />
+            <p>Mobile view with the hamburger menu and responsive typography.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="downloads.html">Downloads</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="https://github.com/seriousaboutsolutions/amber" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <p>© <span id="year"></span> Amber. MIT licensed.</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    menuToggle.addEventListener('click', () => {
+      const isOpen = navLinks.classList.toggle('open');
+      menuToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  </script>
+</body>
+</html>

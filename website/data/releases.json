@@ -1,0 +1,79 @@
+{
+  "repository": "https://github.com/seriousaboutsolutions/amber",
+  "releases": [
+    {
+      "version": "0.2.6",
+      "tag": "v0.2.6",
+      "date": "2026-07-08",
+      "channel": "stable",
+      "deprecated": false,
+      "local": true,
+      "notes": "Enterprise-grade update: config scoring weights are now wired into the safety classifier, the RustSec advisory database is cached in the user's standard platform cache directory (XDG_CACHE_HOME / dirs::cache_dir fallback), MSRV is declared in Cargo.toml and enforced by a new CI job, and the coverage roadmap is refreshed now that the project has reached 95% line coverage. Also adds the --emoji shortcut flag as a convenient alias for --format emoji.",
+      "assets": [
+        { "name": "Linux tarball", "filename": "amber-0.2.6-x86_64.tar.gz", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.2.6.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.2.6.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    },
+    {
+      "version": "0.2.5",
+      "tag": "v0.2.5",
+      "date": "2026-07-08",
+      "channel": "stable",
+      "deprecated": false,
+      "local": true,
+      "notes": "Adds the emoji output mode for terminal sharing, website screenshots gallery, and dummy-user VHS recordings. Desktop and mobile website previews are now embedded on the homepage.",
+      "assets": [
+        { "name": "Linux tarball", "filename": "amber-0.2.5-x86_64.tar.gz", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.2.5.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.2.5.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    },
+    {
+      "version": "0.3.0-beta.1",
+      "tag": "v0.3.0-beta.1",
+      "date": "2026-07-01",
+      "channel": "prerelease",
+      "deprecated": false,
+      "notes": "Beta adds SaaS policy sync, SARIF v2 output, and Groq LPU-powered migration hints for Amber Pro users.",
+      "assets": [
+        { "name": "Windows installer", "filename": "amber-0.3.0-beta.1-x86_64.msi", "kind": "installer", "platform": "windows" },
+        { "name": "macOS disk image", "filename": "amber-0.3.0-beta.1-x86_64.dmg", "kind": "installer", "platform": "macos" },
+        { "name": "Linux AppImage", "filename": "amber-0.3.0-beta.1-x86_64.AppImage", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.3.0-beta.1.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.3.0-beta.1.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    },
+    {
+      "version": "0.2.0",
+      "tag": "v0.2.0",
+      "date": "2026-06-15",
+      "channel": "stable",
+      "deprecated": false,
+      "notes": "Stable release with the new RustSec advisory enricher, JSON/PR/SARIF reporters, and validated replacement generation.",
+      "assets": [
+        { "name": "Windows installer", "filename": "amber-0.2.0-x86_64.msi", "kind": "installer", "platform": "windows" },
+        { "name": "macOS disk image", "filename": "amber-0.2.0-x86_64.dmg", "kind": "installer", "platform": "macos" },
+        { "name": "Linux AppImage", "filename": "amber-0.2.0-x86_64.AppImage", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.2.0.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.2.0.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "tag": "v0.1.0",
+      "date": "2025-11-20",
+      "channel": "stable",
+      "deprecated": true,
+      "deprecationNotice": "This release is no longer supported. It lacks the current scoring model and replacement validator. Use 0.2.0 or later.",
+      "notes": "Original proof-of-concept release. Kept here for historical reference only.",
+      "assets": [
+        { "name": "Windows installer", "filename": "amber-0.1.0-x86_64.msi", "kind": "installer", "platform": "windows" },
+        { "name": "macOS disk image", "filename": "amber-0.1.0-x86_64.dmg", "kind": "installer", "platform": "macos" },
+        { "name": "Linux tarball", "filename": "amber-0.1.0-x86_64.tar.gz", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.1.0.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.1.0.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    }
+  ]
+}

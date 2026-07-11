@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Lint with pedantic + nursery
+        run: cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery -D warnings
+
+      - name: Build default features
+        run: cargo build --release
+
+      - name: Build all features
+        run: cargo build --release --all-features
+
+      - name: Run tests
+        run: cargo test --all-targets
+
+      - name: Run tests with all features
+        run: cargo test --all-targets --all-features
+
+      - name: Security audit
+        run: cargo audit
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read MSRV from Cargo.toml
+        id: msrv
+        run: |
+          version=$(grep '^rust-version' Cargo.toml | sed 's/.*= *"\(.*\)".*/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install MSRV toolchain
+        uses: dtolnay/rust-action@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+
+      - name: Check MSRV
+        run: cargo +${{ steps.msrv.outputs.version }} check --all-targets --all-features
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+
+      - name: Generate coverage
+        run: cargo tarpaulin --all-targets --all-features --out Xml
+
+  build-release:
+    name: Build release binaries
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: ".exe"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package binary
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "target/${{ matrix.target }}/release/amber${{ matrix.suffix }}" "dist/amber-${{ matrix.target }}${{ matrix.suffix }}"
+
+      - name: Compute checksum (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd dist
+          sha256sum "amber-${{ matrix.target }}${{ matrix.suffix }}" > "amber-${{ matrix.target }}.sha256"
+
+      - name: Compute checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd dist
+          $hash = Get-FileHash -Algorithm SHA256 -Path "amber-${{ matrix.target }}${{ matrix.suffix }}"
+          "$($hash.Hash.ToLower())  amber-${{ matrix.target }}${{ matrix.suffix }}" | Out-File -Encoding utf8 "amber-${{ matrix.target }}.sha256"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: amber-${{ matrix.target }}
+          path: dist/*
+
+  release:
+    name: Create GitHub release
+    needs: build-release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: amber-*
+          merge-multiple: true
+
+      - name: Consolidate checksums
+        shell: bash
+        run: |
+          cd dist
+          cat *.sha256 > checksums.txt
+          rm *.sha256
+
+      - name: Import GPG key
+        if: env.GPG_PRIVATE_KEY != ''
+        uses: crazy-max/ghaction-import-gpg@v6
+        id: gpg
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Sign checksums
+        if: env.GPG_PRIVATE_KEY != ''
+        shell: bash
+        run: |
+          cd dist
+          gpg --batch --yes --armor --detach-sign -u "${{ steps.gpg.outputs.fingerprint }}" checksums.txt
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

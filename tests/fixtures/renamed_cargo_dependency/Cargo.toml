@@ -1,0 +1,7 @@
+[package]
+name = "renamed_cargo_dependency"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+helper = { package = "path_helper", path = "path_helper" }

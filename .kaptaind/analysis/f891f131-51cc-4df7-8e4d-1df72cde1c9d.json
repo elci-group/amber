@@ -1,0 +1,125 @@
+{
+  "cluster_id": "f891f131-51cc-4df7-8e4d-1df72cde1c9d",
+  "version": "0.2.0",
+  "bump": "Minor",
+  "event_count": 495,
+  "started_at": "2026-07-08T15:34:09.586226490Z",
+  "ended_at": "2026-07-08T15:34:14.456825566Z",
+  "diff": {
+    "structural": 0.88652503,
+    "api": 0.79375,
+    "deps": 0.7416667,
+    "runtime": 0.1,
+    "api_breaking": false,
+    "api_added": false,
+    "touched_paths": 4893,
+    "api_touches": 4,
+    "api_signatures": 10,
+    "dependency_manifests": 2,
+    "dependency_nodes": 20,
+    "dependency_edges": 19,
+    "runtime_paths": 12,
+    "bundle": 0.0,
+    "parse_metadata": [
+      {
+        "file": "amber_out/amber_anyhow.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_anyhow.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_serde.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_serde_json.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_unused_crate.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_out/amber_anyhow.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_anyhow.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_serde.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_serde_json.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      },
+      {
+        "file": "amber_proposals/amber_unused_crate.rs",
+        "lang": "Rust",
+        "version": "2021",
+        "parser_used": "Ast",
+        "fallback_used": false,
+        "confidence": 0.8075,
+        "version_match": "inferred"
+      }
+    ],
+    "ast_cache_hits": 5,
+    "ast_cache_misses": 5,
+    "ast_cache_entries": 8
+  },
+  "weight": {
+    "score": 0.71174204,
+    "api_breaking": false,
+    "api_added": false
+  },
+  "air_gapped": false
+}

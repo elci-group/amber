@@ -1,0 +1,17 @@
+/target
+
+# Amber tool output (analysis cache and generated proposals). Keeping these out
+# of version control prevents accidental commits of host-specific analysis state.
+.amber/
+amber_out/
+amber_proposals/
+benches_out/
+
+# docs/vhs recording side-effects (rendered GIFs and fixture run artefacts).
+docs/vhs/out/
+docs/vhs/fixture/target/
+
+# Coverage artefacts (regenerate with cargo-tarpaulin).
+/lcov.info
+/tarpaulin-report.html
+

@@ -1,0 +1,7 @@
+[default]
+exclude-files = [
+    "src/replacement/template_data/*",
+    "amber_out/*",
+    "amber_proposals/*",
+    "benches_out/*",
+]

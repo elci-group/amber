@@ -1,0 +1,56 @@
+[package]
+name = "amber"
+version = "0.2.6"
+edition = "2021"
+authors = ["SVCH <svch@seriousaboutsolutions.co.uk>"]
+description = "Autonomous dependency reduction engine for Rust"
+license = "MIT"
+repository = "https://github.com/seriousaboutsolutions/amber"
+rust-version = "1.80"
+
+[lib]
+name = "amber"
+path = "src/lib.rs"
+
+[[bin]]
+name = "amber"
+path = "src/main.rs"
+
+[[bench]]
+name = "amber_benchmarks"
+harness = false
+
+[[bench]]
+name = "amber_library"
+harness = false
+required-features = ["library"]
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+cargo_metadata = { version = "0.18", features = ["builder"] }
+syn = { version = "2.0", features = ["full", "visit"] }
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
+toml = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+semver = "1.0"
+comfy-table = "7.1"
+ureq = { version = "2.10", optional = true, features = ["json"] }
+rustsec = { version = "0.30.1", default-features = false }
+padagonia = { path = "../padagonia", optional = true }
+
+[features]
+default = []
+online = ["dep:ureq"]
+library = ["dep:padagonia"]
+
+[dev-dependencies]
+criterion = "0.7.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
