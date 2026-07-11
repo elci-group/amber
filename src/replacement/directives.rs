@@ -127,7 +127,7 @@ impl DirectiveGenerator {
     fn build_rationale(score: &ReplacementScore, usage: &CrateUsage) -> Vec<String> {
         let mut rationale = score.reasoning.clone();
 
-        if usage.imported_items.is_empty() {
+        if !usage.has_usage() {
             rationale.push(
                 "The dependency is declared but has no detected source usage; removal is the safest action."
                     .to_string(),
@@ -160,15 +160,15 @@ impl DirectiveGenerator {
         score: &ReplacementScore,
     ) -> String {
         let kind_label = format!("{:?}", dep.kind);
-        let api_text = if usage.imported_items.is_empty() {
-            "no detected API usage".to_string()
-        } else {
+        let api_text = if usage.has_usage() {
             format!(
                 "{} unique APIs across {} call sites in {} file(s)",
                 usage.unique_api_usage,
                 usage.call_sites.len(),
                 usage.affected_files.len()
             )
+        } else {
+            "no detected API usage".to_string()
         };
 
         let public_api_text = if usage.used_in_public_api {
@@ -206,7 +206,7 @@ impl DirectiveGenerator {
                 .to_string(),
         ];
 
-        if usage.imported_items.is_empty() {
+        if !usage.has_usage() {
             steps.push(format!(
                 "Remove `{}` from `Cargo.toml` and run `cargo check`.",
                 dep.name

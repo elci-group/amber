@@ -242,11 +242,7 @@ impl SafetyClassifier {
         let trivial_bonus: i16 = if usage.is_trivial_usage { 10 } else { 0 };
 
         // Bonus for unused dependencies
-        let unused_bonus: i16 = if usage.imported_items.is_empty() {
-            20
-        } else {
-            0
-        };
+        let unused_bonus: i16 = if usage.has_usage() { 0 } else { 20 };
 
         let score = 50 + base + trivial_bonus + unused_bonus;
         u8::try_from(score.clamp(0, 100)).unwrap_or(0)
@@ -302,7 +298,7 @@ impl SafetyClassifier {
     }
 
     fn confidence_score(usage: &CrateUsage, _dep: &Dependency) -> u8 {
-        if usage.imported_items.is_empty() {
+        if !usage.has_usage() {
             return 100; // Unused dependencies are easy to remove with certainty
         }
 
@@ -387,7 +383,7 @@ impl SafetyClassifier {
         }
 
         // Unused dependency special case
-        if usage.imported_items.is_empty() {
+        if !usage.has_usage() {
             return (
                 SafetyClass::SafeToReplace,
                 ReplacementRecommendation::Proceed,
@@ -457,6 +453,30 @@ mod tests {
         assert_eq!(score.classification, SafetyClass::SafeToReplace);
         assert_eq!(score.recommendation, ReplacementRecommendation::Proceed);
         assert_eq!(score.confidence, 100);
+    }
+
+    #[test]
+    fn call_site_only_usage_is_not_unused() {
+        let classifier = SafetyClassifier::new();
+        let dep = dummy_dependency("toml");
+        let usage = CrateUsage {
+            crate_name: "toml".to_string(),
+            call_sites: vec![crate::analysis::types::CallSite {
+                function_name: "from_str".to_string(),
+                kind: crate::analysis::types::UsageKind::FunctionCall,
+                location: crate::analysis::types::Location::new("src/main.rs", 10, 5),
+                context: "path expression: toml::from_str".to_string(),
+            }],
+            ..Default::default()
+        };
+        let score = classifier.score_dependency(&dep, &usage);
+
+        assert_ne!(
+            score.recommendation,
+            ReplacementRecommendation::Proceed,
+            "a crate used through call sites must not get the unused-dependency fast path"
+        );
+        assert_ne!(score.confidence, 100);
     }
 
     #[test]

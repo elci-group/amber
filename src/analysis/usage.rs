@@ -261,17 +261,26 @@ fn collect_aliases(
     dep_names: &HashSet<String>,
     alias_map: &mut HashMap<String, String>,
 ) {
+    // Cargo package names may contain hyphens; Rust path segments use
+    // underscores instead, so match on the hyphen-normalised form.
+    let resolve = |ident: &syn::Ident| -> Option<String> {
+        let name = ident.to_string();
+        if dep_names.contains(&name) {
+            Some(name)
+        } else {
+            let normalized = name.replace('_', "-");
+            dep_names.contains(&normalized).then_some(normalized)
+        }
+    };
     match tree {
         syn::UseTree::Path(path) => {
-            let first = path.ident.to_string();
-            if dep_names.contains(&first) {
+            if resolve(&path.ident).is_some() {
                 // potential alias deeper in the tree
                 collect_aliases(&path.tree, dep_names, alias_map);
             }
         }
         syn::UseTree::Rename(rename) => {
-            let original = rename.ident.to_string();
-            if dep_names.contains(&original) {
+            if let Some(original) = resolve(&rename.ident) {
                 alias_map.insert(rename.rename.to_string(), original);
             }
         }
@@ -294,13 +303,23 @@ struct UsageVisitor<'a> {
 }
 
 impl UsageVisitor<'_> {
+    /// Resolve a Rust path's first segment to a Cargo dependency name.
+    ///
+    /// Rust identifiers cannot contain hyphens, so a crate like `comfy-table`
+    /// appears in source as `comfy_table`; the final fallback compares the
+    /// hyphen-normalised form against the declared dependency names.
     fn resolve_crate(&self, first_segment: &str) -> Option<String> {
         if self.dep_names.contains(first_segment) {
             Some(first_segment.to_string())
+        } else if let Some(name) = self.alias_map.get(first_segment) {
+            Some(name.clone())
         } else {
-            self.alias_map
-                .get(first_segment)
-                .map(std::string::ToString::to_string)
+            let normalized = first_segment.replace('_', "-");
+            if self.dep_names.contains(&normalized) {
+                Some(normalized)
+            } else {
+                None
+            }
         }
     }
 
@@ -760,10 +779,7 @@ fn path_to_string(path: &syn::Path) -> String {
 fn collect_imports(tree: &syn::UseTree, visitor: &mut UsageVisitor<'_>) {
     if let syn::UseTree::Path(path) = tree {
         let first = path.ident.to_string();
-        if visitor.dep_names.contains(&first) || visitor.alias_map.contains_key(&first) {
-            let crate_name = visitor
-                .resolve_crate(&first)
-                .unwrap_or_else(|| first.clone());
+        if let Some(crate_name) = visitor.resolve_crate(&first) {
             collect_imports_inner(&path.tree, &crate_name, &first, visitor);
         }
     }
@@ -898,6 +914,44 @@ mod tests {
                 .iter()
                 .any(|c| c.function_name == "Serialize"),
             "expected usage through alias"
+        );
+    }
+
+    #[test]
+    fn detects_hyphenated_crate_usage() {
+        let deps = vec![dep_named("comfy-table")];
+        let mut usage = HashMap::new();
+        let code = r"
+            use comfy_table::{Cell, Table};
+            fn demo() { let _t = comfy_table::Table::new(); }
+        ";
+        UsageAnalyzer::analyze_file_usage(code, &deps, &mut usage, "test.rs");
+
+        let comfy = usage.get("comfy-table").unwrap();
+        assert!(
+            comfy.imported_items.iter().any(|i| i.name == "Cell"),
+            "expected `use comfy_table::...` to be attributed to `comfy-table`"
+        );
+        assert!(
+            !comfy.call_sites.is_empty(),
+            "expected call sites of hyphenated crate to be attributed"
+        );
+        assert!(comfy.has_usage());
+    }
+
+    #[test]
+    fn detects_hyphenated_crate_fully_qualified() {
+        let deps = vec![dep_named("tracing-subscriber")];
+        let mut usage = HashMap::new();
+        let code = r"
+            fn init() { tracing_subscriber::fmt().init(); }
+        ";
+        UsageAnalyzer::analyze_file_usage(code, &deps, &mut usage, "test.rs");
+
+        let sub = usage.get("tracing-subscriber").unwrap();
+        assert!(
+            sub.has_usage(),
+            "expected fully-qualified `tracing_subscriber::` usage to count"
         );
     }
 

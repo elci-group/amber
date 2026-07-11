@@ -219,6 +219,7 @@ impl ConsoleReporter {
         for (dep, score) in deps.iter().zip(scores.iter()) {
             let api_text = match usage.get(&dep.name) {
                 Some(u) if !u.imported_items.is_empty() => u.unique_api_usage.to_string(),
+                Some(u) if !u.call_sites.is_empty() => u.call_sites.len().to_string(),
                 _ => "unused".dimmed(),
             };
 
@@ -508,6 +509,7 @@ impl EmojiReporter {
         for (dep, score) in deps.iter().zip(scores.iter()) {
             let api_text = match usage.get(&dep.name) {
                 Some(u) if !u.imported_items.is_empty() => u.unique_api_usage.to_string(),
+                Some(u) if !u.call_sites.is_empty() => u.call_sites.len().to_string(),
                 _ => "unused 💤".dimmed(),
             };
 

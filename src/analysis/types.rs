@@ -69,6 +69,15 @@ pub struct CrateUsage {
     pub is_trivial_usage: bool,
 }
 
+impl CrateUsage {
+    /// Whether any source usage of the crate was detected, either through
+    /// `use` imports or fully-qualified call sites (e.g. `toml::from_str`).
+    #[must_use]
+    pub fn has_usage(&self) -> bool {
+        !self.imported_items.is_empty() || !self.call_sites.is_empty()
+    }
+}
+
 /// A source location for a usage event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Location {
