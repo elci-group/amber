@@ -2,6 +2,20 @@
   "repository": "https://github.com/seriousaboutsolutions/amber",
   "releases": [
     {
+      "version": "0.3.0",
+      "tag": "v0.3.0",
+      "date": "2026-07-11",
+      "channel": "stable",
+      "deprecated": false,
+      "local": true,
+      "notes": "Self-hosting milestone: the CLI is refactored into a subcommand module hierarchy, colored/walkdir/tempfile are replaced by internal std-only modules, and an optional Padagonia-backed replacement library (library feature) stores and reuses validated modules. Adds replacement templates for tracing, tracing-subscriber, toml, and ureq, a cross-platform release pipeline, and an operator runbook. Fixes unused-dependency false positives for hyphenated crates and call-site-only usage.",
+      "assets": [
+        { "name": "Linux tarball", "filename": "amber-0.3.0-x86_64.tar.gz", "kind": "installer", "platform": "linux" },
+        { "name": "Source .zip", "filename": "amber-0.3.0.zip", "kind": "source", "platform": "source" },
+        { "name": "Source .tar.gz", "filename": "amber-0.3.0.tar.gz", "kind": "source", "platform": "source" }
+      ]
+    },
+    {
       "version": "0.2.6",
       "tag": "v0.2.6",
       "date": "2026-07-08",

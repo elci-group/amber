@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-11
+
 ### Added
 
 - Operator runbook covering CI integration, exit codes, SARIF consumption,
@@ -53,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Strengthened SARIF test assertions to verify rule metadata such as
   `fullDescription`, `defaultConfiguration`, and `help`.
+- Usage analysis now detects hyphenated crates (e.g. `comfy-table` imported as
+  `comfy_table`) and dependencies used only through fully-qualified call sites
+  (e.g. `toml::from_str`), which were previously misreported as unused in all
+  report formats, scores, and directives.
 
 ## [0.2.6] - 2026-07-09
 

@@ -1,6 +1,6 @@
 # Amber
 
-[![version](https://img.shields.io/badge/version-0.2.6-amber.svg)](Cargo.toml)
+[![version](https://img.shields.io/badge/version-0.3.0-amber.svg)](Cargo.toml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![msrv](https://img.shields.io/badge/MSRV-1.80-orange.svg)](Cargo.toml)
 
