@@ -1,40 +1,56 @@
 # Amber Enterprise-Grade Assessment
 
-**Version assessed:** 0.2.6  
-**Date:** 2026-07-08  
-**Assessor:** Automated code-quality review  
-**Scope:** Source code, tests, CI, documentation, security posture, and operational readiness.
+**Version assessed:** 0.3.0
+**Date:** 2026-07-11
+**Assessor:** Automated code-quality review
+**Scope:** Source code, tests, CI, documentation, security posture, distribution, and operational readiness.
+**Previous assessment:** [0.2.6, 2026-07-08](#appendix-a-traceability-from-the-026-assessment)
 
 ---
 
 ## Executive Summary
 
-Amber is a well-architected, library-first Rust CLI with clean module boundaries, strong test discipline, and mature CI. It ships multiple output formats (console, emoji, JSON, PR markdown, SARIF), integrates with RustSec, and validates generated replacements with `cargo check`. The codebase demonstrates enterprise-ready patterns: strict clippy lints, deterministic offline defaults, feature-gated network access, and a coherent data model.
+Amber 0.3.0 is a well-engineered, library-first Rust CLI: 214 passing tests,
+95% line coverage, zero clippy warnings under pedantic + nursery, no `unsafe`,
+and a mature local toolchain (fmt/clippy/test/audit/coverage in CI, MSRV job,
+cross-platform release builds with checksums and optional GPG signing).
+Most of the previous assessment's A→S items are closed (see Appendix A).
 
-**Overall grade: A** — production-ready for internal developer tooling and CI pipelines. It is not yet an industry-leading (S) platform because a few heuristics are hard-coded, config weights are not wired into scoring, and the advisory DB cache path is relative to CWD rather than a standard cache directory. These are fixable and do not block adoption.
+**Overall grade: A-** — the engineering core is S-grade, but three
+non-code issues block enterprise *release* readiness:
+
+1. **The repository does not build standalone.** `Cargo.toml` declares
+   `padagonia = { path = "../padagonia", optional = true }`. Cargo resolves
+   path dependencies at manifest time regardless of features, so a fresh clone
+   fails *every* build — including the default one — and every CI job on a
+   clean GitHub Actions runner. This is the single release-blocking defect.
+2. **Governance and supply-chain docs are missing.** No `SECURITY.md`,
+   `CONTRIBUTING.md`, or code of conduct; no Dependabot; the git history was
+   started 2026-07-11 and has no remote yet.
+3. **The website publishes fictional releases.** `website/data/releases.json`
+   lists a `0.3.0-beta.1` with "Groq LPU-powered migration hints for Amber Pro
+   users" and there is a pricing page for a product that does not exist. For an
+   enterprise audience this is a credibility liability.
+
+None of these require code redesign; all are closable in days. The detailed
+plan is in [`docs/roadmap/RELEASE_READINESS.md`](docs/roadmap/RELEASE_READINESS.md).
 
 ---
 
 ## Methodology
 
-Each area is graded against enterprise criteria:
+Grading scale: **S** exceptional, **A** production-ready, **B** solid with
+gaps, **C** significant gaps, **D** below standard, **F** critical.
 
-| Grade | Meaning |
-|-------|---------|
-| **S** | Exceptional / best-in-class. Little to no risk. |
-| **A** | Production-ready. Minor improvements possible. |
-| **B** | Solid. Some gaps to close before broad rollout. |
-| **C** | Functional but significant gaps or technical debt. |
-| **D** | Below enterprise standards. Needs rework. |
-| **F** | Critical deficiencies. Do not use as-is. |
+Evidence:
 
-Evidence comes from:
-
-- Static analysis (`cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery -D warnings`)
-- Test execution (`cargo test --all-targets --all-features`)
-- Coverage report (`lcov.info` / `tarpaulin-report.html`)
-- Dependency audit (`cargo audit`)
-- Manual review of source, tests, CI workflows, and documentation.
+- `cargo test --all-targets` — 214 passed, 0 failed (194 lib + 13 integration + 7 CLI)
+- `cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery -D warnings` — clean
+- `cargo fmt --check` — clean
+- `lcov.info` — 95.0% line coverage (generated 2026-07-08, pre-dates the 0.3.0
+  unused-detection fix; re-baseline due)
+- Standalone-build reproduction of the path-dependency failure
+- Manual review of source, CI workflows, website data, and documentation
 
 ---
 
@@ -42,326 +58,133 @@ Evidence comes from:
 
 | Metric | Value | Target | Grade |
 |--------|-------|--------|-------|
-| Lines of source (src/) | ~7,140 | — | — |
-| Lines of tests | ~1,850 (unit + integration + CLI) | >20% of source | ✅ |
-| Test pass rate | 169/169 | 100% | S |
-| `cargo clippy` | Clean with pedantic + nursery | Clean | S |
-| `cargo audit` | 0 vulns, 0 warnings | 0/0 | S |
-| Line coverage | 95.0% | ≥95% | S |
-| `#![deny(clippy::unwrap_used)]` in release | Yes | Yes | S |
-| Async/runtime surface | None | Minimal | S |
-| Feature flags | `online` gated | Present | A |
-| MSRV declared | No | Recommended | C |
+| Lines of source (src/) | ~10,600 | — | — |
+| Test pass rate | 214/214 | 100% | S |
+| Clippy (pedantic + nursery) | Clean | Clean | S |
+| rustfmt | Clean | Clean | S |
+| `cargo audit` | 0 vulns (CI gate) | 0 | S |
+| Line coverage | 95.0% (stale by 3 days) | ≥95% | A |
+| `unsafe` code | None | None | S |
+| MSRV | 1.80 declared + CI job | Declared + enforced | S |
+| Standalone build | **Fails** (path dep `../padagonia`) | Must pass | F |
+| Feature flags | `online`, `library` | Present | A |
+| Release signing | GPG, optional/unarmed | Armed + documented | B |
+| SBOM / provenance | None | Required for GA | D |
 
 ---
 
-## Per-Module / Per-Feature Assessment
-
-### 1. CLI & Command Dispatch (`src/main.rs`)
-
-**Grade: A**
-
-- **Strengths**
-  - Thin binary; all logic delegated to the library.
-  - Uses `clap` derive macros with typed enums and validation.
-  - Clean exit-code semantics: `0` success, `1` actionable findings, `2` strict policy violation.
-  - `--emoji` shorthand, `--format` value enum, `--threshold` clamped to `u8`.
-  - Extensive unit tests (510–961) covering every command and edge case.
-  - Coverage: 94.4%.
-
-- **Gaps**
-  - No MSRV declared in `Cargo.toml`; enterprises often pin one.
-  - `--online` flag is compiled out when feature is disabled but the help text still mentions it via `#[cfg(feature = "online")]`; this is correct but could confuse users who did not compile with the feature.
-  - The `roadmap` subcommand prints hard-coded text that can drift from the actual source tree. It is tested, but not generated from source.
-
-- **Evidence**: `src/main.rs:27-75` CLI struct, `src/main.rs:222-436` analysis flow, `src/main.rs:510-961` tests.
-
----
-
-### 2. Repository Analysis (`src/analysis/repo.rs`)
-
-**Grade: B+**
-
-- **Strengths**
-  - Uses `cargo_metadata` for robust Cargo integration.
-  - Feature flags respected via `CargoOpt::AllFeatures`.
-  - Sorts dependencies for deterministic output.
-  - Good error messages via `anyhow::Context`.
-  - Coverage: 94.1%.
-
-- **Gaps**
-  - `MetadataCommand::no_deps()` is used, then transitive deps are reconstructed from the resolve graph. This is fragile for workspaces with renamed crates or complex feature unification.
-  - `Version::parse(&p.version.to_string()).unwrap_or(Version::new(0, 0, 0))` silently masks parse failures.
-  - Path dependencies are detected but not deeply validated.
-  - Does not handle virtual workspaces without a root package gracefully beyond an error message.
-
-- **Evidence**: `src/analysis/repo.rs:41-98` metadata loading and dependency listing.
-
----
-
-### 3. Usage Analysis (`src/analysis/usage.rs`)
-
-**Grade: B+**
-
-- **Strengths**
-  - Two-pass `syn` visitor: alias collection then usage attribution.
-  - Handles imports, function calls, method calls, macros, types, attributes, derive macros, glob imports, and renames.
-  - Tracks file/line/column locations for SARIF output.
-  - Good fixture coverage (renamed imports, glob imports, derive macros).
-  - Coverage: 96.7%.
-
-- **Gaps**
-  - **Heuristic method-call attribution.** Without type inference, a method call like `x.foo()` can be misattributed to a crate that exports a trait or type named `foo`. This is a fundamental limitation of syntax-only analysis.
-  - `used_in_public_api` is always `false`; the field exists but is never populated.
-  - API coverage estimate hard-codes `50.0` as the total public API count.
-  - Only scans `src/`; does not scan `examples/`, `tests/`, `benches/` by default (the fixture test names suggest it does, but the implementation uses `manifest_dir.join("src")`).
-  - `analyze_crate_usage` builds a fake `Dependency` with empty version and default metadata, which means scoring for a single crate may not reflect its real transitive value or CVE count.
-
-- **Evidence**: `src/analysis/usage.rs:17-147` analyzer setup and post-processing.
-
----
-
-### 4. Analysis Types (`src/analysis/types.rs`)
-
-**Grade: A**
-
-- **Strengths**
-  - Rich, well-documented data model.
-  - `Dependency`, `CrateUsage`, `ImportedItem`, `CallSite`, `Location`, `UsageKind` cover the domain.
-  - Derives `Default`, `Serialize`, `Deserialize` consistently.
-  - Coverage: 100%.
-
-- **Gaps**
-  - `used_in_public_api` is dead weight until the visitor populates it.
-  - Some integer fields (`loc_approx`, `public_api_count`, `download_count`) are often left at default values by the offline provider.
-
----
-
-### 5. Metadata Providers (`src/metadata/`)
-
-**Grade: A-**
-
-- **Strengths**
-  - Clean trait abstraction (`MetadataProvider`).
-  - Offline provider returns neutral, safe defaults.
-  - Online provider uses synchronous `ureq` and is feature-gated.
-  - RustSec integration clones/updates the advisory DB and caches it locally.
-  - Tests use dependency injection for git operations.
-  - Coverage: 94.2%.
-
-- **Gaps**
-  - **Cache path is relative to CWD** (`.amber/rustsec-advisory-db`). Running Amber from different directories creates duplicate caches and can fail in CI with read-only filesystems. Should use `dirs::cache_dir()` or `XDG_CACHE_HOME` with a fallback.
-  - Online provider tests are not run in default CI because the feature is off; coverage of `online.rs` is 95.3% only when enabled.
-  - Network timeouts are not explicitly configured in `ureq::Agent`.
-  - No retry/back-off logic for crates.io failures.
-
-- **Evidence**: `src/metadata/rustsec.rs:19-115` cache and git logic, `src/metadata/online.rs:52-90` HTTP client.
-
----
-
-### 6. Scoring Engine (`src/scoring/classifier.rs`, `src/scoring/rules.rs`)
-
-**Grade: B+**
-
-- **Strengths**
-  - Six-dimensional scoring model with clear reasoning output.
-  - Hard-coded `NEVER_REPLACE` list for crypto/TLS/runtime crates is a sensible safety guard.
-  - CVE count overrides classification to `SecurityCritical`.
-  - Star/emoji ratings and recommendations are consistent.
-  - Excellent coverage: classifier 99.3%, rules 100%.
-
-- **Gaps**
-  - **Config weights are parsed but ignored.** `Config.weights` is never passed into `SafetyClassifier`. The default weights are duplicated in `ScoreDimensions` logic implicitly via hard-coded thresholds and arithmetic.
-  - Some thresholds and bucket boundaries are magic numbers (e.g., `usage.api_coverage_percent < 10.0` → 90).
-  - `confidence_score` is deterministic and does not reflect statistical confidence.
-  - Category lists (`FREQUENTLY_REPLACEABLE`, `HEAVY_TRANSITIVE_CRATES`) are maintained manually and can become stale.
-
-- **Evidence**: `src/scoring/classifier.rs:115-200` scoring dimensions, `src/config/mod.rs:15` unused weights field.
-
----
-
-### 7. Replacement Generation (`src/replacement/`)
-
-**Grade: B**
-
-- **Strengths**
-  - Template-based generation with per-crate stubs in `template_data/`.
-  - Validates generated code with `cargo check` in a temporary project.
-  - Generates validation strategy, risk notes, and test plan.
-  - Handles `anyhow`, `itertools`, `lazy_static`, `chrono`, and generic stubs.
-  - Good coverage: generator 100%, validator 100%, templates 86.2%.
-
-- **Gaps**
-  - **Generated stubs are intentionally incomplete** (`// TODO: Implement ...`). This is by design for human review, but enterprises may expect higher-fidelity replacements for the most common crates.
-  - `Validator` only checks compilation, not behavioral equivalence.
-  - Compile-time and binary-size estimates are hard-coded lookup tables.
-  - `build_validation_strategy` checks `usage.used_in_public_api`, which is always false, so the downstream API compatibility strategy is never added.
-  - No sandboxing of `cargo check`; it runs with the user's network/toolchain.
-
-- **Evidence**: `src/replacement/generator.rs:41-81` generation flow, `src/replacement/validator.rs:28-51` validation, `src/replacement/templates.rs:220-240` generic stub.
-
----
-
-### 8. Reporting (`src/reporting/formatters.rs`)
-
-**Grade: A**
-
-- **Strengths**
-  - Five output formats from one data model.
-  - Console and emoji tables now have bold headers, column alignment, and minimum widths.
-  - JSON and SARIF are valid and include locations.
-  - PR markdown includes actionable summaries and checklists.
-  - Comprehensive tests covering all formats and edge cases.
-  - Coverage: 100%.
-
-- **Gaps**
-  - SARIF output does not include full rule metadata or tool component descriptor required by some enterprise scanners.
-  - No machine-readable reason codes; reasoning is free-form strings.
-  - Console table could still wrap poorly on very small terminals despite constraints.
-
----
-
-### 9. Configuration (`src/config/mod.rs`)
-
-**Grade: B+**
-
-- **Strengths**
-  - TOML config with threshold, weights, and policy.
-  - Policy supports required/forbidden crates and strict mode.
-  - Clean violation messages.
-  - Tests cover all policy branches.
-  - Coverage: 100%.
-
-- **Gaps**
-  - **Weights are not wired into scoring** (repeated because it is the most impactful gap).
-  - No config schema validation beyond serde deserialization.
-  - No documented default config or config discovery order.
-
----
-
-### 10. Testing & Quality Assurance
-
-**Grade: A**
-
-- **Strengths**
-  - 169 tests passing across unit, integration, CLI, and benchmarks.
-  - Fixtures cover renamed imports, glob imports, derive macros, and path dependencies.
-  - Criterion benchmarks exist for hot paths.
-  - Coverage is 95.0% overall.
-  - CI runs fmt, clippy (pedantic/nursery), tests, audit, and coverage.
-
-- **Gaps**
-  - `online` feature is not exercised in default CI.
-  - No fuzz or property-based tests.
-  - No load/performance regression test in CI.
-
----
-
-### 11. Security
-
-**Grade: A-**
-
-- **Strengths**
-  - RustSec advisory integration.
-  - Never-replace list for crypto/TLS/runtime.
-  - No `unsafe` code in the project.
-  - No secrets or credential handling.
-  - `cargo audit` clean.
-
-- **Gaps**
-  - Runs `git` and `cargo` as subprocesses without input validation/sanitization beyond Rust's type system.
-  - Writes generated code and proposals to user-specified paths (`--output`, `out_dir`) without path traversal checks.
-  - Cache directory is relative; could clash or leak across projects.
-
----
-
-### 12. CI / Build / Release
-
-**Grade: A**
-
-- **Strengths**
-  - `.github/workflows/ci.yml` runs fmt, clippy, tests, audit, and release builds.
-  - `.github/workflows/deploy-website.yml` publishes static site.
-  - Release profile uses LTO and strip for small binaries.
-  - `Cargo.lock` committed.
-
-- **Gaps**
-  - No MSRV job.
-  - No cross-compilation or distribution builds beyond Linux x86_64 tarball.
-  - No signed checksums for release artifacts.
-
----
-
-### 13. Documentation
-
-**Grade: A-**
-
-- **Strengths**
-  - `README.md` is concise and accurate.
-  - `ARCHITECTURE.md` explains layout and data flow.
-  - `COVERAGE_95_ROADMAP.md` details coverage gaps and plan.
-  - Inline rustdoc is present on public APIs.
-  - Website has landing, downloads, and pricing pages.
-
-- **Gaps**
-  - `COVERAGE_95_ROADMAP.md` is now stale because coverage has reached 95.0%.
-  - No operator/runbook documentation for CI integration.
-  - No changelog or migration guide.
+## Area Assessments
+
+### Engineering core (unchanged strengths)
+
+| Area | Grade | Notes |
+|------|-------|-------|
+| Code quality | S | Strict lints, no unsafe, `#![deny(clippy::unwrap_used)]`. |
+| Test coverage | S | 214 tests; fixtures cover renamed imports, glob imports, derive macros, path deps. |
+| Architecture | A | CLI refactored from a 1,200-line `main.rs` into `src/cli/` subcommand modules. |
+| Performance | A | Synchronous, no runtime; Criterion benches for hot paths and the library feature. |
+| Observability | B+ | Structured `tracing` logging; no metrics (acceptable for a CLI). |
+| Documentation | A- | README, man page, ARCHITECTURE, MIGRATION, OPERATOR_RUNBOOK, directives, VHS demos. |
+
+### Correctness of analysis — B+ (up from B)
+
+- **Fixed today (0.3.0):** hyphenated crates (`comfy-table` seen as
+  `comfy_table`) and call-site-only dependencies (`toml::from_str`) were
+  reported as unused in every output format. Self-analysis now shows real usage
+  for all 14 direct dependencies.
+- **Remaining by-design limitation:** syntax-only method-call attribution can
+  misattribute `x.foo()` without type inference. Documented and bounded; not a
+  blocker for a recommendation tool, but must be disclosed in enterprise docs.
+
+### Security — A-
+
+- RustSec advisory integration with XDG-compliant cache (fixed since 0.2.6).
+- CVE count overrides classification to `SecurityCritical`; never-replace list
+  for crypto/TLS/runtime crates.
+- **Open:** `--output`/`out_dir` paths are not validated against traversal;
+  `git`/`cargo` subprocesses inherit the user's environment; `Validator` runs
+  `cargo check` unsandboxed. All acceptable for a local dev tool, all must be
+  documented or hardened before GA.
+
+### CI / Build / Release — C (regressed from A)
+
+- **Blocker:** standalone build failure (see Executive Summary). Every job in
+  `.github/workflows/ci.yml` (`build --all-features`, MSRV, coverage) fails on
+  a clean runner because `../padagonia` is absent.
+- Present and good: fmt/clippy/tests/audit gate, MSRV job read from
+  `Cargo.toml`, Linux/macOS/Windows release matrix, SHA-256 checksums,
+  upload-before-sign ordering, GPG signing that no-ops cleanly without a key.
+- **Missing:** Dependabot, SBOM generation, provenance attestation, scheduled
+  (not just PR-triggered) `cargo audit`, coverage gate that fails under 95%,
+  self-analysis regression gate (roadmap item).
+
+### Distribution & governance — D
+
+- Not published to crates.io; install is `cargo install --path .`.
+- No `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`.
+- Git history initialized 2026-07-11; no remote configured; previously the tree
+  lived untracked inside another repository.
+- Website contains fabricated release notes and a pricing page (see Executive
+  Summary, item 3).
+- `Cargo.toml` metadata otherwise complete (license, repository, description).
+
+### Configuration — A (up from B+)
+
+- Weights are now wired: `SafetyClassifier::with_weights`, validated
+  (non-negative, finite, sum ≈ 1.0) in `src/config/mod.rs`, with a test proving
+  custom weights change scores.
+- Remaining minor gap: no published JSON/TOML schema for `.amber.toml`.
+
+### Replacement generation — B+ (up from B)
+
+- Templates added for `tracing`, `tracing-subscriber`, `toml`, `ureq`;
+  validation via `cargo check` before reporting; `used_in_public_api` now
+  populated and consumed by validation strategy.
+- Still compile-only validation (no behavioral equivalence) and hard-coded
+  compile-time/binary-size estimates — acceptable, must stay documented.
 
 ---
 
 ## Aggregate Scorecard
 
-| Area | Grade | Rationale |
-|------|-------|-----------|
-| Code quality | A | Strict lints, no unsafe, idiomatic Rust. |
-| Test coverage | S | 95.0% line coverage, 169 passing tests. |
-| Architecture | A | Clean modular boundaries, library-first. |
-| Security | A- | Solid defaults, minor path/cache hygiene issues. |
-| Performance | A | Synchronous, no runtime overhead, benchmarks exist. |
-| Observability | B+ | Structured logging, but no metrics/telemetry. |
-| Configurability | B+ | Config file exists but weights are unused. |
-| Operational readiness | A | CI, release builds, website, packages. |
-| Documentation | A- | Good docs, some staleness. |
-| Correctness / heuristics | B+ | Syntax-only analysis has known false positives/negatives. |
+| Area | 0.2.6 | 0.3.0 | Delta |
+|------|-------|-------|-------|
+| Code quality | A | S | ⬆ |
+| Test coverage | S | S | — |
+| Architecture | A | A | — |
+| Security | A- | A- | — |
+| Performance | A | A | — |
+| Observability | B+ | B+ | — |
+| Configurability | B+ | A | ⬆ |
+| Operational readiness | A | C | ⬇ (standalone build) |
+| Documentation | A- | A- | — |
+| Correctness / heuristics | B+ | B+ | ⬆ within grade (unused-detection fix) |
+| Distribution & governance | — | D | new axis |
 
-**Overall: A**
-
----
-
-## Roadmap from A to S
-
-To move Amber from **A** to **S**, the following changes are recommended, ordered by impact:
-
-1. **Wire config weights into scoring** (`src/config/mod.rs` → `src/scoring/classifier.rs`).
-   - Impact: High. Closes the biggest functional gap.
-
-2. **Use a standard cache directory** for RustSec DB (`dirs::cache_dir()` / `XDG_CACHE_HOME`).
-   - Impact: High. Makes the tool CI-safe and multi-project friendly.
-
-3. **Populate `used_in_public_api`** in the usage visitor.
-   - Impact: Medium. Improves downstream API strategy accuracy.
-
-4. **Add MSRV policy** and CI job.
-   - Impact: Medium. Required for enterprise adoption.
-
-5. **Improve transitive dependency resolution** by using `cargo_metadata` with deps enabled and deriving the graph more robustly.
-   - Impact: Medium. Reduces misreporting in complex workspaces.
-
-6. **Enhance SARIF output** with tool component descriptor and rule metadata.
-   - Impact: Medium. Better integration with GitHub/CodeQL enterprise scanners.
-
-7. **Add signed release checksums** and cross-platform builds in CI.
-   - Impact: Medium. Required for external distribution.
-
-8. **Replace hard-coded API count (`50.0`)** with a configurable or crate-aware estimate.
-   - Impact: Low-Medium. Improves coverage accuracy.
-
-9. **Refresh or remove `COVERAGE_95_ROADMAP.md`** now that 95% is achieved; replace with a broader S-grade roadmap.
-   - Impact: Low. Documentation hygiene.
+**Overall: A-** — S-grade engineering core, release blocked by buildability,
+governance, and distribution gaps.
 
 ---
 
-## Conclusion
+## Appendix A: Traceability from the 0.2.6 assessment
 
-Amber is a production-ready tool with strong engineering discipline. The current grade of **A** reflects a solid foundation: excellent coverage, clean architecture, and good security defaults. Reaching **S** requires closing a small number of functional gaps—most notably the unused config weights and the relative cache path—and adding enterprise polish such as MSRV policy and signed releases. None of the identified issues are blockers for internal use today.
+| 0.2.6 A→S item | Status at 0.3.0 |
+|----------------|-----------------|
+| Wire config weights into scoring | ✅ Done (`with_weights` + validation + test) |
+| Standard cache directory for RustSec DB | ✅ Done (XDG_CACHE_HOME, `src/metadata/rustsec.rs:26`) |
+| Populate `used_in_public_api` | ✅ Done (visitor tracks `pub` items/impls) |
+| MSRV policy and CI job | ✅ Done (`rust-version = "1.80"`, `msrv` job) |
+| Robust transitive resolution | ✅ Done (full `cargo_metadata` resolve graph, renamed deps) |
+| SARIF rule metadata | ✅ Done (`fullDescription`, `defaultConfiguration`, `help`) |
+| Signed checksums + cross-platform builds | ✅ Done (matrix builds, SHA-256, optional GPG) — signing unarmed |
+| Crate-aware API-count estimate | ✅ Done (`Dependency.public_api_count` with LOC fallback) |
+| Refresh stale `COVERAGE_95_ROADMAP.md` | ⚠️ Still present; superseded by this document |
+| Unused-dependency false positives (found after 0.2.6) | ✅ Done (0.3.0, hyphenated + call-site-only) |
+
+## Appendix B: Known limitations to disclose to enterprise users
+
+1. Syntax-only analysis: method calls without imports may be misattributed.
+2. Replacement validation is compile-only, not behavioral.
+3. Compile-time/binary-size estimates are heuristic lookup tables.
+4. `online` and `library` features are off by default; offline scoring uses
+   neutral metadata defaults.

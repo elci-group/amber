@@ -38,3 +38,6 @@ with `amber directives <crate>`.
 
 - [`roadmap/V0_3_SELF_HOSTING.md`](roadmap/V0_3_SELF_HOSTING.md) — the path to
   Amber analyzing its own dependency tree.
+- [`roadmap/RELEASE_READINESS.md`](roadmap/RELEASE_READINESS.md) — the path from
+  v0.3.0 to enterprise general availability (v1.0.0); see also the
+  [enterprise assessment](../ENTERPRISE_ASSESSMENT.md).
