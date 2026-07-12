@@ -148,7 +148,7 @@ jobs:
           echo "self-analysis exit code: $code"
 
       - name: Upload self-analysis report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: amber-self-analysis
           path: amber-self.json
@@ -234,7 +234,7 @@ jobs:
           "$($hash.Hash.ToLower())  amber-${{ matrix.target }}${{ matrix.suffix }}" | Out-File -Encoding utf8 "amber-${{ matrix.target }}.sha256"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: amber-${{ matrix.target }}
           path: dist/*
