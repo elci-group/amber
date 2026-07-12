@@ -65,7 +65,7 @@ Evidence:
 | `cargo audit` | 0 vulns (CI gate) | 0 | S |
 | Line coverage | 95.0% (stale by 3 days) | ≥95% | A |
 | `unsafe` code | None | None | S |
-| MSRV | 1.80 declared + CI job | Declared + enforced | S |
+| MSRV | 1.85 declared + CI job | Declared + enforced | S |
 | Standalone build | **Fails** (path dep `../padagonia`) | Must pass | F |
 | Feature flags | `online`, `library` | Present | A |
 | Release signing | GPG, optional/unarmed | Armed + documented | B |
@@ -173,7 +173,7 @@ governance, and distribution gaps.
 | Wire config weights into scoring | ✅ Done (`with_weights` + validation + test) |
 | Standard cache directory for RustSec DB | ✅ Done (XDG_CACHE_HOME, `src/metadata/rustsec.rs:26`) |
 | Populate `used_in_public_api` | ✅ Done (visitor tracks `pub` items/impls) |
-| MSRV policy and CI job | ✅ Done (`rust-version = "1.80"`, `msrv` job) |
+| MSRV policy and CI job | ✅ Done (`rust-version = "1.85"`, `msrv` job) |
 | Robust transitive resolution | ✅ Done (full `cargo_metadata` resolve graph, renamed deps) |
 | SARIF rule metadata | ✅ Done (`fullDescription`, `defaultConfiguration`, `help`) |
 | Signed checksums + cross-platform builds | ✅ Done (matrix builds, SHA-256, optional GPG) — signing unarmed |

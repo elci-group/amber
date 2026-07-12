@@ -2,7 +2,7 @@
 
 [![version](https://img.shields.io/badge/version-0.3.0-amber.svg)](Cargo.toml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![msrv](https://img.shields.io/badge/MSRV-1.80-orange.svg)](Cargo.toml)
+[![msrv](https://img.shields.io/badge/MSRV-1.85-orange.svg)](Cargo.toml)
 
 **Amber** is an autonomous dependency-reduction engine for Rust. It analyzes a
 Cargo project, detects how each third-party crate is used, scores every
@@ -45,7 +45,7 @@ research project.
 
 ## Installation
 
-Requires Rust **1.80** or newer.
+Requires Rust **1.85** or newer.
 
 ```bash
 cargo install --path .
@@ -87,6 +87,7 @@ amber replace anyhow --out-dir amber_out
 | `amber list` | List all dependencies with usage statistics. |
 | `amber replace <crate> [-o DIR]` | Generate a validated replacement module (default dir `amber_out`). |
 | `amber directives <crate> [-o FILE]` | Emit a scoped, implementation-ready replacement directive. |
+| `amber migrate <crate> --replace-with <FILE> [--dry-run]` | Apply a replacement module: rewrite imports, remove the dependency, verify with `cargo check`, roll back on failure (`migrate` feature). |
 | `amber roadmap` | Show Amber's internal module roadmap. |
 | `amber library …` | Manage the replacement library (`library` feature). |
 

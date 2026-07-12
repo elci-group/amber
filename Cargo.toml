@@ -6,7 +6,7 @@ authors = ["SVCH <svch@seriousaboutsolutions.co.uk>"]
 description = "Autonomous dependency reduction engine for Rust"
 license = "MIT"
 repository = "https://github.com/elci-group/amber"
-rust-version = "1.80"
+rust-version = "1.85"
 
 [lib]
 name = "amber"
@@ -39,7 +39,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 semver = "1.0"
 comfy-table = "7.1"
 ureq = { version = "2.10", optional = true, features = ["json"] }
-rustsec = { version = "0.30.1", default-features = false }
+rustsec = { version = "0.31", default-features = false }
 # Git dependency on the public padagonia repository. Once padagonia is
 # published to crates.io, switch to `padagonia = { version = "0.1.4", optional = true }`
 # (crates.io forbids git dependencies, so this also gates `cargo publish`).

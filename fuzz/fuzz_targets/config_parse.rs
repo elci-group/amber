@@ -13,8 +13,10 @@ fuzz_target!(|data: &[u8]| {
         return;
     };
     let _ = config.validate();
-    for name in ["serde", "anyhow", "comfy-table", ""] {
-        let _ = config.policy.is_required(name);
-        let _ = config.policy.is_forbidden(name);
+    if let Some(policy) = &config.policy {
+        for name in ["serde", "anyhow", "comfy-table", ""] {
+            let _ = policy.is_required(name);
+            let _ = policy.is_forbidden(name);
+        }
     }
 });

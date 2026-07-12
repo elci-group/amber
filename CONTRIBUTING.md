@@ -11,8 +11,7 @@ cargo build
 cargo test --all-targets
 ```
 
-Requires Rust 1.80 or newer (MSRV; see `Cargo.toml`). The optional `library`
-feature requires Rust 1.85+.
+Requires Rust 1.85 or newer (MSRV; see `Cargo.toml`).
 
 ## Before opening a PR
 

@@ -26,12 +26,11 @@ follows.
 ## MSRV policy
 
 - The minimum supported Rust version is declared as `rust-version` in
-  `Cargo.toml` (currently **1.80**) and enforced by the `msrv` CI job.
+  `Cargo.toml` (currently **1.85**) and enforced by the `msrv` CI job.
 - MSRV bumps are treated as **minor** changes, never patch changes, and are
   noted in the changelog.
 - Optional features may require a newer toolchain; this is documented per
-  feature. The `library` feature currently requires Rust **1.85+** (via its
-  `padagonia` dependency).
+  feature. All current features build at the base MSRV.
 
 ## Deprecations
 
