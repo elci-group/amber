@@ -2,6 +2,7 @@
 use crate::amber_anyhow::Result;
 
 use crate::analysis::usage::UsageAnalyzer;
+use crate::cli::paths::validate_output_path;
 use crate::cli::{build_analyzer, build_classifier, load_config, Cli};
 #[cfg(feature = "library")]
 use crate::cli::{open_library, use_library};
@@ -14,10 +15,11 @@ use tracing::{info, warn};
 ///
 /// # Errors
 ///
-/// Returns an error if the dependency cannot be analyzed or the replacement
-/// cannot be generated.
+/// Returns an error if `out_dir` escapes the target project root, the
+/// dependency cannot be analyzed, or the replacement cannot be generated.
 pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str, out_dir: &Path) -> Result<i32> {
     info!("Generating replacement for: {crate_name}");
+    let out_dir = validate_output_path(&cli.path, out_dir)?;
     Generator::validate_crate_name(crate_name)?;
     let config = load_config(cli, manifest_path)?;
     let analyzer = build_analyzer(manifest_path, cli)?;
@@ -37,7 +39,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str, out_dir: &Path) ->
         return Ok(0);
     }
 
-    let generator = Generator::new(out_dir.to_path_buf());
+    let generator = Generator::new(out_dir);
     #[cfg(feature = "library")]
     let proposal = if use_library(cli, &config) {
         let mut library_store = open_library(&config)?;

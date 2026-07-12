@@ -132,3 +132,47 @@ If a replacement proposal is applied and causes a regression:
 
 For high-risk crates, generate the proposal with `--threshold 0 --propose` and
 review the generated code before committing any changes.
+
+## Known analysis limitations
+
+Amber's usage analysis is syntax-only (a `syn` AST walk without type
+inference). Treat its reports as a review queue, not ground truth:
+
+1. **Method calls without an import or fully-qualified path cannot be
+   attributed.** `x.process()` is only linked to a crate when the receiver's
+   type was imported from it; bare `Type::new()` calls via an imported name are
+   not recorded as call sites.
+2. **Macro-expanded and generated code is invisible.** Usage that only exists
+   after macro expansion (including some derive-generated code) is not seen.
+3. **Replacement validation is compile-only.** The validator runs
+   `cargo check`; it does not prove behavioral equivalence. Always run the
+   target project's test suite after adopting a replacement.
+4. **Compile-time and binary-size estimates are heuristics** from lookup
+   tables, not measurements.
+5. **Offline scoring uses neutral metadata defaults.** Maintenance scores,
+   download counts, and release dates require the `online` feature; CVE counts
+   require the RustSec advisory database (see above).
+
+## Verifying release artifacts
+
+Each GitHub release ships binaries with checksums, a signature, an SBOM, and a
+build-provenance attestation. To verify a downloaded artifact:
+
+```bash
+# 1. Checksum
+sha256sum --check checksums.txt --ignore-missing
+
+# 2. GPG signature (once a signing key is published at
+#    https://github.com/elci-group/amber — see SECURITY.md)
+gpg --verify checksums.txt.asc checksums.txt
+
+# 3. Build provenance (requires the GitHub CLI)
+gh attestation verify amber-x86_64-unknown-linux-gnu \
+  --repo elci-group/amber
+
+# 4. SBOM — inspect amber-sbom.json (CycloneDX 1.5) for the exact
+#    dependency set the binary was built from.
+```
+
+If the signing key is not yet published, the release notes say so explicitly
+and `checksums.txt.asc` will be absent.

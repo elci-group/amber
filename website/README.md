@@ -45,4 +45,4 @@ The site is plain HTML/CSS/JS and can be hosted anywhere. A GitHub Actions workf
 ## Notes
 
 - The subscription form on the pricing page is a front-end demo. Integrate it with your payment provider (e.g., Stripe) and backend before accepting real subscriptions.
-- Download links point to the GitHub Releases page for `seriousaboutsolutions/amber`.
+- Download links point to the GitHub Releases page for `elci-group/amber`.

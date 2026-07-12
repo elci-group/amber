@@ -84,3 +84,16 @@ amber directives colored -o colored.md
 
 `cargo(1)`, reproducible demos in `docs/vhs/README.md`, documentation index in
 `docs/README.md`.
+
+## LIMITATIONS
+
+- Usage analysis is syntax-only: method calls whose receiver type is not
+  visibly imported cannot be attributed to a crate, and macro-expanded or
+  generated code is invisible.
+- Replacement validation is compile-only (`cargo check`); it does not prove
+  behavioral equivalence. Run the target project's tests after adopting a
+  replacement.
+- Compile-time and binary-size estimates are heuristics, not measurements.
+- Offline scoring uses neutral metadata defaults; maintenance/download data
+  needs the `online` feature, and CVE counts need the RustSec advisory
+  database.

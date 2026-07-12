@@ -175,5 +175,24 @@ amber directives colored \-o colored.md
 .PP
 Reproducible demo recordings: \fBdocs/vhs/README.md\fR.
 Project documentation index: \fBdocs/README.md\fR.
+.SH LIMITATIONS
+.TP
+\(bu
+Usage analysis is syntax-only: method calls whose receiver type is not
+visibly imported cannot be attributed to a crate, and macro-expanded or
+generated code is invisible.
+.TP
+\(bu
+Replacement validation is compile-only (\fBcargo check\fR); it does not prove
+behavioural equivalence. Run the target project's tests after adopting a
+replacement.
+.TP
+\(bu
+Compile-time and binary-size estimates are heuristics, not measurements.
+.TP
+\(bu
+Offline scoring uses neutral metadata defaults; maintenance/download data
+needs the \fBonline\fR feature, and CVE counts need the RustSec advisory
+database.
 .SH AUTHOR
 Amber contributors. MIT licence.

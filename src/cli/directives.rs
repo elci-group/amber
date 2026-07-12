@@ -2,6 +2,7 @@
 use crate::amber_anyhow::Result;
 
 use crate::analysis::usage::UsageAnalyzer;
+use crate::cli::paths::validate_output_path;
 use crate::cli::{build_analyzer, build_classifier, load_config, Cli};
 use crate::replacement::{DirectiveContext, DirectiveGenerator};
 use crate::reporting::style::Colorize;
@@ -12,8 +13,8 @@ use tracing::info;
 ///
 /// # Errors
 ///
-/// Returns an error if the dependency cannot be analyzed or the directive
-/// cannot be written.
+/// Returns an error if `output` escapes the target project root, the
+/// dependency cannot be analyzed, or the directive cannot be written.
 pub fn run(
     cli: &Cli,
     manifest_path: &Path,
@@ -46,7 +47,8 @@ pub fn run(
     let markdown = directive.to_markdown();
 
     if let Some(path) = output {
-        std::fs::write(path, &markdown)?;
+        let path = validate_output_path(&cli.path, path)?;
+        std::fs::write(&path, &markdown)?;
         println!("\n{} Directive written to {}", "✓".green(), path.display());
     } else {
         println!("{markdown}");

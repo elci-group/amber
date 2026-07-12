@@ -28,7 +28,7 @@ Amber is release-ready when **all** of the following hold:
 | # | Work item | Acceptance |
 |---|-----------|------------|
 | 0.1 | Replace `padagonia = { path = "../padagonia" }` in `Cargo.toml` with a buildable source: publish padagonia to crates.io and depend by version, or vendor it into the workspace, or make it a `git` dependency. | `git clone` → `cargo build --all-features` passes on a clean machine |
-| 0.2 | Push the repository to `github.com/seriousaboutsolutions/amber`; confirm every job in `.github/workflows/ci.yml` passes on the real runner (including `msrv` and `coverage`). | CI green on `main` |
+| 0.2 | Push the repository to `github.com/elci-group/amber`; confirm every job in `.github/workflows/ci.yml` passes on the real runner (including `msrv` and `coverage`). | CI green on `main` |
 | 0.3 | Re-baseline coverage after the 0.3.0 fixes (`cargo tarpaulin --all-targets --all-features`); regenerate `lcov.info`. | Coverage ≥95% recorded in CI |
 | 0.4 | Retire `COVERAGE_95_ROADMAP.md` (goal met); point readers at this roadmap. | File removed or replaced with a pointer |
 

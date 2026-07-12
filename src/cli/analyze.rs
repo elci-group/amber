@@ -2,6 +2,7 @@
 use crate::amber_anyhow::Result;
 
 use crate::analysis::usage::UsageAnalyzer;
+use crate::cli::paths::validate_output_path;
 use crate::cli::{build_analyzer, build_classifier, load_config, Cli, OutputFormat};
 #[cfg(feature = "library")]
 use crate::cli::{open_library, use_library};
@@ -17,9 +18,13 @@ use tracing::{info, info_span, warn};
 ///
 /// # Errors
 ///
-/// Returns an error if analysis, scoring, or report generation fails.
+/// Returns an error if `output_path` escapes the target project root, or if
+/// analysis, scoring, or report generation fails.
 #[allow(clippy::too_many_lines)]
 pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Result<i32> {
+    let output_path = output_path
+        .map(|path| validate_output_path(&cli.path, path))
+        .transpose()?;
     let config = load_config(cli, manifest_path)?;
     let threshold = config.threshold.unwrap_or(cli.threshold);
 
@@ -78,7 +83,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         OutputFormat::Json => {
             let reporter = JsonReporter::new();
             let json = reporter.generate_json(&deps, &usage_stats, &scores)?;
-            if let Some(path) = output_path {
+            if let Some(path) = &output_path {
                 std::fs::write(path, json)?;
                 println!("\n{} Report written to {}", "✓".green(), path.display());
             } else {
@@ -88,7 +93,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         OutputFormat::Pr => {
             let reporter = PrReporter::new();
             let pr_body = reporter.generate_pr_body(&deps, &usage_stats, &scores, threshold);
-            if let Some(path) = output_path {
+            if let Some(path) = &output_path {
                 std::fs::write(path, pr_body)?;
                 println!(
                     "\n{} PR description written to {}",
@@ -102,7 +107,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         OutputFormat::Sarif => {
             let reporter = crate::reporting::formatters::SarifReporter::new();
             let sarif = reporter.generate_sarif(&deps, &usage_stats, &scores)?;
-            if let Some(path) = output_path {
+            if let Some(path) = &output_path {
                 std::fs::write(path, sarif)?;
                 println!(
                     "\n{} SARIF report written to {}",

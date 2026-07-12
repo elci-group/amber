@@ -946,7 +946,7 @@ impl SarifReporter {
                     "driver": {
                         "name": "amber",
                         "version": env!("CARGO_PKG_VERSION"),
-                        "informationUri": "https://github.com/seriousaboutsolutions/amber",
+                        "informationUri": "https://github.com/elci-group/amber",
                         "rules": [
                             {
                                 "id": "unused-dependency",

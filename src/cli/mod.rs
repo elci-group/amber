@@ -10,6 +10,7 @@ pub mod directives;
 #[cfg(feature = "library")]
 pub mod library;
 pub mod list;
+pub mod paths;
 pub mod replace;
 pub mod roadmap;
 pub mod score;
@@ -811,16 +812,16 @@ strict = true
 
     #[test]
     fn run_analyze_writes_json_to_output_path() {
-        let temp = crate::temp::tempdir().unwrap();
+        let temp = copy_fixture_to_temp("sample_project");
+        let manifest = temp.path().join("Cargo.toml");
         let output = temp.path().join("report.json");
-        let manifest = fixture_manifest("sample_project");
         let cli = Cli::parse_from([
             "amber",
             "--format",
             "json",
             "--threshold",
             "100",
-            manifest.parent().unwrap().to_str().unwrap(),
+            temp.path().to_str().unwrap(),
             "analyze",
             "--output",
             output.to_str().unwrap(),
@@ -831,16 +832,16 @@ strict = true
 
     #[test]
     fn run_analyze_writes_pr_to_output_path() {
-        let temp = crate::temp::tempdir().unwrap();
+        let temp = copy_fixture_to_temp("sample_project");
+        let manifest = temp.path().join("Cargo.toml");
         let output = temp.path().join("report.md");
-        let manifest = fixture_manifest("sample_project");
         let cli = Cli::parse_from([
             "amber",
             "--format",
             "pr",
             "--threshold",
             "100",
-            manifest.parent().unwrap().to_str().unwrap(),
+            temp.path().to_str().unwrap(),
             "analyze",
             "--output",
             output.to_str().unwrap(),
@@ -851,9 +852,9 @@ strict = true
 
     #[test]
     fn run_analyze_writes_sarif_to_output_path() {
-        let temp = crate::temp::tempdir().unwrap();
+        let temp = copy_fixture_to_temp("sample_project");
+        let manifest = temp.path().join("Cargo.toml");
         let output = temp.path().join("report.sarif");
-        let manifest = fixture_manifest("sample_project");
         let cli = Cli::parse_from([
             "amber",
             "--format",

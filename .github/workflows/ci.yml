@@ -67,7 +67,9 @@ jobs:
           toolchain: ${{ steps.msrv.outputs.version }}
 
       - name: Check MSRV
-        run: cargo +${{ steps.msrv.outputs.version }} check --all-targets --all-features
+        # Default features only: the optional `library` feature pulls in
+        # padagonia, whose MSRV (1.85) is higher than amber's (1.80).
+        run: cargo +${{ steps.msrv.outputs.version }} check --all-targets
 
   coverage:
     runs-on: ubuntu-latest
@@ -89,13 +91,86 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin --locked
 
-      - name: Generate coverage
-        run: cargo tarpaulin --all-targets --all-features --out Xml
+      - name: Generate coverage (fails below 95% line coverage)
+        run: cargo tarpaulin --all-targets --all-features --out Xml --fail-under 95
+
+  fuzz:
+    name: Fuzz smoke test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-action@master
+        with:
+          toolchain: nightly
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Fuzz config_parse (60s)
+        run: cargo +nightly fuzz run config_parse -- -max_total_time=60 -print_final_stats=1
+
+  self-analysis:
+    name: Self-analysis gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Build amber
+        run: cargo build --release
+
+      - name: Amber analyzes itself
+        run: ./target/release/amber --format json . > amber-self.json
+
+      - name: Upload self-analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: amber-self-analysis
+          path: amber-self.json
+
+      - name: Dependency-count regression check
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          count_deps() { awk '/^\[dependencies\]/{f=1;next} /^\[/{f=0} f && /^[a-zA-Z0-9_-]+[[:space:]]*=/{n++} END{print n+0}' "$1"; }
+          git show "origin/${{ github.base_ref }}:Cargo.toml" > /tmp/base-Cargo.toml
+          base=$(count_deps /tmp/base-Cargo.toml)
+          pr=$(count_deps Cargo.toml)
+          echo "Direct dependencies — base: $base, PR: $pr"
+          if [ "$pr" -gt "$base" ]; then
+            echo "::error::Direct dependency count increased ($base -> $pr). Amber holds its own tree to the same standard it enforces; see CONTRIBUTING.md."
+            exit 1
+          fi
+
+  publish-check:
+    name: crates.io publish dry-run
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Publish dry-run
+        run: cargo publish --dry-run
 
   build-release:
     name: Build release binaries
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       matrix:
         include:
@@ -146,6 +221,11 @@ jobs:
           name: amber-${{ matrix.target }}
           path: dist/*
 
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+
   release:
     name: Create GitHub release
     needs: build-release
@@ -172,6 +252,13 @@ jobs:
           cd dist
           cat *.sha256 > checksums.txt
           rm *.sha256
+
+      - name: Generate SBOM
+        shell: bash
+        run: |
+          cargo install cargo-cyclonedx --locked
+          cargo cyclonedx --format json --all --override-filename amber-sbom
+          mv amber-sbom.json dist/amber-sbom.json
 
       - name: Import GPG key
         if: env.GPG_PRIVATE_KEY != ''

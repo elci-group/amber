@@ -15,3 +15,7 @@ docs/vhs/fixture/target/
 /lcov.info
 /tarpaulin-report.html
 
+# Fuzz testing artefacts.
+/fuzz/target
+/fuzz/artifacts
+

@@ -23,7 +23,7 @@
   }
 
   function renderRelease(release) {
-    const repo = allReleases.repository || 'https://github.com/seriousaboutsolutions/amber';
+    const repo = allReleases.repository || 'https://github.com/elci-group/amber';
     const downloadBase = release.local
       ? `data/releases/${release.tag}`
       : `${repo}/releases/download/${release.tag}`;

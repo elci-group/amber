@@ -221,7 +221,7 @@ impl Validator {
 
     /// Validate that `module_name` is safe to use as a file name and Cargo
     /// package identifier.
-    fn validate_module_name(module_name: &str) -> Result<()> {
+    pub(crate) fn validate_module_name(module_name: &str) -> Result<()> {
         let mut chars = module_name.chars();
         let first = chars
             .next()
@@ -275,7 +275,7 @@ impl Default for Validator {
     }
 }
 
-fn summarize_stderr(stderr: &str) -> String {
+pub(crate) fn summarize_stderr(stderr: &str) -> String {
     let lines: Vec<&str> = stderr.lines().collect();
     if lines.len() <= STDERR_SUMMARY_LINES {
         stderr.to_string()
