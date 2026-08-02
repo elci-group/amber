@@ -29,6 +29,37 @@ Amber returns the following exit codes:
 Treat exit code `1` as a review signal, not a build failure, unless your team
 has decided to block merges on Amber findings.
 
+## Running the daemon
+
+Build Amber with the optional daemon feature when you want workstation-level
+monitoring and Padagonia-backed analysis caching:
+
+```bash
+cargo install --path . --features daemon
+```
+
+Use `--once` for smoke tests and scheduled jobs:
+
+```bash
+amber daemon --once --root "$HOME"
+```
+
+Use continuous mode for local monitoring:
+
+```bash
+amber daemon --root "$HOME" --interval-secs 60
+```
+
+The daemon writes `.amber/daemon.toml` markers into detected Cargo projects and
+stores analysis snapshots in `~/.amber/analysis-cache.pad` by default. It creates
+an exclusive `.lock` file next to the cache; if a second daemon points at the
+same cache, it exits instead of writing concurrently.
+
+Retention defaults are conservative: the daemon keeps the newest snapshot per
+project, evicts entries older than 90 days, evicts projects whose manifest no
+longer exists, and caps the cache at 512 snapshots. See
+[`daemon.md`](daemon.md) for systemd setup and tuning flags.
+
 ## SARIF output consumption
 
 Amber can emit a SARIF v2.1.0 report with two rule types:

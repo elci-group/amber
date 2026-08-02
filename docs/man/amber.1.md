@@ -58,6 +58,23 @@ Feature-gated: `--library` / `--no-library` (`library` feature), `--online`
 - `roadmap` — show Amber's internal module roadmap.
 - `directives <crate> [-o file]` — emit a scoped replacement directive.
 - `library` — (`library` feature) manage the Padagonia replacement library.
+- `migrate <crate> --replace-with <file> [--dry-run]` — (`migrate` feature)
+  rewrite imports, remove the dependency, validate with `cargo check`, and roll
+  back on failure.
+- `daemon [options]` — (`daemon` feature) monitor a directory tree for Cargo
+  projects, create `.amber/daemon.toml` markers, and cache JSON analysis
+  snapshots in Padagonia.
+
+### Daemon options
+
+- `--root <DIR>` — directory tree to monitor (default `$HOME`).
+- `--interval-secs <N>` — polling interval for continuous mode (default 30).
+- `--once` — run one scan and exit.
+- `--cache <PATH>` — Padagonia analysis cache path.
+- `--max-projects <N>` — maximum Cargo projects analyzed per scan (default 32).
+- `--analyze-source-changes` — re-run full analysis for source-only changes.
+- `--max-cache-entries <N>` — maximum retained analysis snapshots (default 512).
+- `--cache-max-age-days <N>` — maximum retained snapshot age (default 90).
 
 ## EXIT STATUS
 
@@ -78,12 +95,13 @@ amber --propose --threshold 70
 amber score anyhow
 amber replace serde --out-dir out
 amber directives colored -o colored.md
+amber daemon --once --root ~/work
 ```
 
 ## SEE ALSO
 
 `cargo(1)`, reproducible demos in `docs/vhs/README.md`, documentation index in
-`docs/README.md`.
+`docs/README.md`, daemon operation in `docs/daemon.md`.
 
 ## LIMITATIONS
 
@@ -97,3 +115,4 @@ amber directives colored -o colored.md
 - Offline scoring uses neutral metadata defaults; maintenance/download data
   needs the `online` feature, and CVE counts need the RustSec advisory
   database.
+- The daemon is a polling monitor, not an OS-native filesystem event watcher.

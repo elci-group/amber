@@ -28,6 +28,18 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
     let config = load_config(cli, manifest_path)?;
     let threshold = config.threshold.unwrap_or(cli.threshold);
 
+    // For machine-readable formats all diagnostics go to stderr so stdout
+    // carries only the report payload.
+    let machine_output = matches!(
+        cli.output_format(),
+        OutputFormat::Json | OutputFormat::Pr | OutputFormat::Sarif
+    );
+    macro_rules! diag {
+        ($($arg:tt)*) => {
+            if machine_output { eprintln!($($arg)*); } else { println!($($arg)*); }
+        };
+    }
+
     // Phase 1: Repository Analysis
     let _phase = info_span!("phase", phase = "index").entered();
     info!("Phase 1: Indexing repository dependencies...");
@@ -35,14 +47,14 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
     let deps = analyzer.list_dependencies(cli.transitive, !cli.no_dev)?;
 
     if deps.is_empty() {
-        println!(
+        diag!(
             "{}",
             "No dependencies found. Is this a Rust project?".yellow()
         );
         return Ok(0);
     }
 
-    println!(
+    diag!(
         "  {} {} dependencies indexed",
         "✓".green(),
         deps.len().to_string().bold()
@@ -53,7 +65,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
     info!("Phase 2: Analyzing contextual usage...");
     let usage_analyzer = UsageAnalyzer::new(manifest_path)?;
     let usage_stats = usage_analyzer.analyze_all_usage(&deps)?;
-    println!(
+    diag!(
         "  {} Usage patterns extracted for {} crates",
         "✓".green(),
         usage_stats.len().to_string().bold()
@@ -70,7 +82,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             classifier.score_dependency(dep, &usage)
         })
         .collect();
-    println!("  {} Safety scores computed", "✓".green());
+    diag!("  {} Safety scores computed", "✓".green());
 
     // Phase 4: Generate report
     let _phase = info_span!("phase", phase = "report").entered();
@@ -85,7 +97,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             let json = reporter.generate_json(&deps, &usage_stats, &scores)?;
             if let Some(path) = &output_path {
                 std::fs::write(path, json)?;
-                println!("\n{} Report written to {}", "✓".green(), path.display());
+                diag!("\n{} Report written to {}", "✓".green(), path.display());
             } else {
                 println!("{json}");
             }
@@ -95,7 +107,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             let pr_body = reporter.generate_pr_body(&deps, &usage_stats, &scores, threshold);
             if let Some(path) = &output_path {
                 std::fs::write(path, pr_body)?;
-                println!(
+                diag!(
                     "\n{} PR description written to {}",
                     "✓".green(),
                     path.display()
@@ -109,7 +121,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             let sarif = reporter.generate_sarif(&deps, &usage_stats, &scores)?;
             if let Some(path) = &output_path {
                 std::fs::write(path, sarif)?;
-                println!(
+                diag!(
                     "\n{} SARIF report written to {}",
                     "✓".green(),
                     path.display()
@@ -177,21 +189,21 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         }
 
         println!();
-        println!(
+        diag!(
             "  {} {} replacement(s) generated in {}",
             "✓".green(),
             generated.to_string().bold(),
             generator.output_dir().display().to_string().cyan()
         );
         if skipped_unsupported > 0 {
-            println!(
+            diag!(
                 "  {} {} crate(s) skipped (unsupported)",
                 "⊘".yellow(),
                 skipped_unsupported.to_string().bold()
             );
         }
         if validation_failed > 0 {
-            println!(
+            diag!(
                 "  {} {} proposal(s) failed validation",
                 "✗".red(),
                 validation_failed.to_string().bold()
@@ -206,9 +218,9 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         let violations = policy.validate(&dep_names);
         if !violations.is_empty() {
             println!();
-            println!("  {}", "Policy Violations".red().bold());
+            diag!("  {}", "Policy Violations".red().bold());
             for v in &violations {
-                println!("    {} {}", "✗".red(), v.message());
+                diag!("    {} {}", "✗".red(), v.message());
             }
             if policy.strict {
                 exit_code = 2;

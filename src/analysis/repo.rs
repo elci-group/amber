@@ -42,9 +42,23 @@ impl RepositoryAnalyzer {
         cmd.manifest_path(manifest_path)
             .features(CargoOpt::AllFeatures);
 
-        let metadata = cmd.exec().context(
-            "Failed to load Cargo metadata. Is this a valid Rust project with Cargo.toml?",
-        )?;
+        let metadata = match cmd.exec() {
+            Ok(metadata) => metadata,
+            Err(full_error) => {
+                tracing::warn!(
+                    %full_error,
+                    "full Cargo metadata resolution failed; falling back to manifest-only metadata"
+                );
+                let mut fallback = MetadataCommand::new();
+                fallback
+                    .manifest_path(manifest_path)
+                    .features(CargoOpt::AllFeatures)
+                    .no_deps();
+                fallback.exec().context(
+                    "Failed to load Cargo metadata. Is this a valid Rust project with Cargo.toml?",
+                )?
+            }
+        };
 
         Ok(Self { metadata, provider })
     }
@@ -53,16 +67,27 @@ impl RepositoryAnalyzer {
     ///
     /// # Errors
     ///
-    /// Returns an error if the workspace has no root package.
+    /// Virtual workspaces have no root package, so their member packages are
+    /// analyzed together.
     pub fn list_dependencies(
         &self,
         include_transitive: bool,
         include_dev: bool,
     ) -> Result<Vec<Dependency>> {
-        let root_package = self
-            .metadata
-            .root_package()
-            .context("No root package found in workspace")?;
+        let workspace_packages: Vec<&Package> = self.metadata.root_package().map_or_else(
+            || {
+                self.metadata
+                    .packages
+                    .iter()
+                    .filter(|package| self.metadata.workspace_members.contains(&package.id))
+                    .collect()
+            },
+            |root_package| vec![root_package],
+        );
+        crate::ensure!(
+            !workspace_packages.is_empty(),
+            "No packages found in workspace"
+        );
 
         let mut deps = Vec::new();
         let mut seen = std::collections::HashSet::new();
@@ -74,38 +99,41 @@ impl RepositoryAnalyzer {
         // Resolve graph for transitive dependencies
         let resolve = self.metadata.resolve.as_ref();
 
-        for dep in &root_package.dependencies {
-            if !include_dev && dep.kind == cargo_metadata::DependencyKind::Development {
-                continue;
+        for package in workspace_packages {
+            for dep in &package.dependencies {
+                if !include_dev && dep.kind == cargo_metadata::DependencyKind::Development {
+                    continue;
+                }
+
+                // Cargo allows renaming a dependency (`new = { package = "old" }`).
+                // The source code uses the declared name, so that is what Amber should
+                // display and match against; the original package name is used for
+                // metadata lookups and transitive resolution.
+                let original_name = dep.name.clone();
+                let display_name = dep.rename.clone().unwrap_or_else(|| original_name.clone());
+                if !seen.insert(display_name.clone()) {
+                    continue;
+                }
+
+                // Find the resolved package for this dependency
+                let dep_package = all_packages.values().find(|p| {
+                    p.name == original_name
+                        && dep.req.matches(
+                            &Version::parse(&p.version.to_string())
+                                .unwrap_or(Version::new(0, 0, 0)),
+                        )
+                });
+
+                let transitive_deps = if include_transitive {
+                    Self::get_transitive_deps(&original_name, resolve, &all_packages)
+                } else {
+                    Vec::new()
+                };
+
+                let dependency =
+                    self.build_dependency_info(dep, &display_name, dep_package, transitive_deps);
+                deps.push(dependency);
             }
-
-            // Cargo allows renaming a dependency (`new = { package = "old" }`).
-            // The source code uses the declared name, so that is what Amber should
-            // display and match against; the original package name is used for
-            // metadata lookups and transitive resolution.
-            let original_name = dep.name.clone();
-            let display_name = dep.rename.clone().unwrap_or_else(|| original_name.clone());
-            if !seen.insert(display_name.clone()) {
-                continue;
-            }
-
-            // Find the resolved package for this dependency
-            let dep_package = all_packages.values().find(|p| {
-                p.name == original_name
-                    && dep.req.matches(
-                        &Version::parse(&p.version.to_string()).unwrap_or(Version::new(0, 0, 0)),
-                    )
-            });
-
-            let transitive_deps = if include_transitive {
-                Self::get_transitive_deps(&original_name, resolve, &all_packages)
-            } else {
-                Vec::new()
-            };
-
-            let dependency =
-                self.build_dependency_info(dep, &display_name, dep_package, transitive_deps);
-            deps.push(dependency);
         }
 
         // Sort by name for consistent output
@@ -268,7 +296,9 @@ impl RepositoryAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn sample_manifest() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -302,6 +332,41 @@ mod tests {
         assert!(names.contains(&"serde"));
         assert!(names.contains(&"serde_json"));
         assert!(names.contains(&"unused_crate"));
+    }
+
+    #[test]
+    fn lists_member_dependencies_for_virtual_workspaces() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("amber-virtual-workspace-{unique}"));
+        fs::create_dir_all(root.join("one/src")).unwrap();
+        fs::create_dir_all(root.join("two/src")).unwrap();
+        fs::write(
+            root.join("Cargo.toml"),
+            "[workspace]\nmembers = [\"one\", \"two\"]\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("one/Cargo.toml"),
+            "[package]\nname = \"one\"\nversion = \"0.1.0\"\nedition = \"2021\"\n[dependencies]\nserde = \"1\"\n",
+        )
+        .unwrap();
+        fs::write(root.join("one/src/lib.rs"), "pub fn one() {}\n").unwrap();
+        fs::write(
+            root.join("two/Cargo.toml"),
+            "[package]\nname = \"two\"\nversion = \"0.1.0\"\nedition = \"2021\"\n[dependencies]\ntoml = \"1\"\n",
+        )
+        .unwrap();
+        fs::write(root.join("two/src/lib.rs"), "pub fn two() {}\n").unwrap();
+
+        let analyzer = RepositoryAnalyzer::new(&root.join("Cargo.toml")).unwrap();
+        let deps = analyzer.list_dependencies(false, true).unwrap();
+        let names: Vec<_> = deps.iter().map(|dep| dep.name.as_str()).collect();
+        assert!(names.contains(&"serde"));
+        assert!(names.contains(&"toml"));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

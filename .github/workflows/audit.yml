@@ -16,10 +16,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
       - name: Audit dependencies
-        run: cargo audit --deny warnings
+        # RUSTSEC-2025-0141 is inherited from optional padagonia -> bincode 1.3.
+        # Keep warnings denied for everything else until padagonia migrates.
+        run: cargo audit --deny warnings --ignore RUSTSEC-2025-0141

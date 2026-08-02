@@ -1,190 +1,174 @@
 # Amber Enterprise-Grade Assessment
 
-**Version assessed:** 0.3.0
-**Date:** 2026-07-11
-**Assessor:** Automated code-quality review
-**Scope:** Source code, tests, CI, documentation, security posture, distribution, and operational readiness.
-**Previous assessment:** [0.2.6, 2026-07-08](#appendix-a-traceability-from-the-026-assessment)
+**Version assessed:** 0.3.0 + daemon, migrate, and post-release readiness work
+**Date:** 2026-07-20
+**Assessor:** Automated code-quality and operability review
+**Scope:** Feature coverage, source code, tests, CI, documentation, security
+posture, distribution, daemon operation, and human operability.
 
 ---
 
-## Executive Summary
+## Executive summary
 
-Amber 0.3.0 is a well-engineered, library-first Rust CLI: 214 passing tests,
-95% line coverage, zero clippy warnings under pedantic + nursery, no `unsafe`,
-and a mature local toolchain (fmt/clippy/test/audit/coverage in CI, MSRV job,
-cross-platform release builds with checksums and optional GPG signing).
-Most of the previous assessment's A→S items are closed (see Appendix A).
+Amber has a strong engineering core and is suitable for serious internal use as
+a Rust dependency-reduction assistant. The CLI is library-first, offline by
+default, strictly linted, well-tested, and produces human and machine-readable
+outputs. The optional daemon now adds workstation monitoring, `.amber` marker
+creation, dependency-diff triggering, Padagonia-backed analysis caching,
+exclusive cache locking, and bounded cache retention.
 
-**Overall grade: A-** — the engineering core is S-grade, but three
-non-code issues block enterprise *release* readiness:
+**Current grade:** A- engineering quality, B+ enterprise readiness, B+ human
+operability.
 
-1. **The repository does not build standalone.** `Cargo.toml` declares
-   `padagonia = { path = "../padagonia", optional = true }`. Cargo resolves
-   path dependencies at manifest time regardless of features, so a fresh clone
-   fails *every* build — including the default one — and every CI job on a
-   clean GitHub Actions runner. This is the single release-blocking defect.
-2. **Governance and supply-chain docs are missing.** No `SECURITY.md`,
-   `CONTRIBUTING.md`, or code of conduct; no Dependabot; the git history was
-   started 2026-07-11 and has no remote yet.
-3. **The website publishes fictional releases.** `website/data/releases.json`
-   lists a `0.3.0-beta.1` with "Groq LPU-powered migration hints for Amber Pro
-   users" and there is a pricing page for a product that does not exist. For an
-   enterprise audience this is a credibility liability.
-
-None of these require code redesign; all are closable in days. The detailed
-plan is in [`docs/roadmap/RELEASE_READINESS.md`](docs/roadmap/RELEASE_READINESS.md).
+The remaining enterprise GA blockers are distribution and operational polish:
+publish or vendor `padagonia` so `cargo publish` can pass, arm and publish GPG
+release signing material, keep the optional Padagonia dependency chain clear of
+unmaintained advisories, and run the daemon under real long-lived workstation
+loads before treating it as mature infrastructure.
 
 ---
 
-## Methodology
+## Evidence
 
-Grading scale: **S** exceptional, **A** production-ready, **B** solid with
-gaps, **C** significant gaps, **D** below standard, **F** critical.
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test --all-targets --all-features` — clean:
+  - 237 library/unit tests;
+  - 20 CLI tests;
+  - 7 integration tests;
+  - 5 migrate integration tests;
+  - benches and examples build.
+- `cargo audit --deny warnings --ignore RUSTSEC-2025-0141` — clean aside from
+  the explicitly ignored optional Padagonia chain advisory.
+- Self-analysis (`amber --format json --threshold 101 . analyze`) completed
+  with exit code `1`, which is expected because Amber flags review candidates.
+- Self-analysis found 16 direct dependencies and active usage for all 16.
 
-Evidence:
+Self-analysis classification summary:
 
-- `cargo test --all-targets` — 214 passed, 0 failed (194 lib + 13 integration + 7 CLI)
-- `cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery -D warnings` — clean
-- `cargo fmt --check` — clean
-- `lcov.info` — 95.0% line coverage (generated 2026-07-08, pre-dates the 0.3.0
-  unused-detection fix; re-baseline due)
-- Standalone-build reproduction of the path-dependency failure
-- Manual review of source, CI workflows, website data, and documentation
-
----
-
-## Cross-Cutting Metrics
-
-| Metric | Value | Target | Grade |
-|--------|-------|--------|-------|
-| Lines of source (src/) | ~10,600 | — | — |
-| Test pass rate | 214/214 | 100% | S |
-| Clippy (pedantic + nursery) | Clean | Clean | S |
-| rustfmt | Clean | Clean | S |
-| `cargo audit` | 0 vulns (CI gate) | 0 | S |
-| Line coverage | 95.0% (stale by 3 days) | ≥95% | A |
-| `unsafe` code | None | None | S |
-| MSRV | 1.85 declared + CI job | Declared + enforced | S |
-| Standalone build | **Fails** (path dep `../padagonia`) | Must pass | F |
-| Feature flags | `online`, `library` | Present | A |
-| Release signing | GPG, optional/unarmed | Armed + documented | B |
-| SBOM / provenance | None | Required for GA | D |
+| Classification | Count |
+|----------------|-------|
+| Low Risk | 11 |
+| Medium Risk | 1 |
+| Security Critical | 4 |
 
 ---
 
-## Area Assessments
+## Feature inventory
 
-### Engineering core (unchanged strengths)
+| Capability | Status | Notes |
+|------------|--------|-------|
+| Dependency inventory | Production-ready | Uses `cargo_metadata`; supports direct/transitive and workspace manifests. |
+| Usage analysis | Strong, bounded | Syntax-tree analysis via `syn`; no type inference. |
+| Replaceability scoring | Strong | Configurable weights and policy enforcement. |
+| Reports | Strong | Console, JSON, PR Markdown, SARIF, emoji. |
+| Replacement generation | Useful with review | Generated modules are compile-checked before reporting. |
+| Technical directives | Useful | Produces scoped implementation guidance for crate replacement. |
+| Migration | Promising | Feature-gated, rewrites imports, removes dependencies, validates, and rolls back on failure. |
+| Padagonia library | Useful but distribution-gated | Git dependency blocks crates.io publishing until Padagonia is published or vendored. |
+| Daemon | New, functional | Polling monitor, dependency fingerprints, `.amber/daemon.toml`, cache lock, retention controls. |
+| Online metadata | Optional | crates.io fetches behind the `online` feature; default remains offline. |
 
-| Area | Grade | Notes |
-|------|-------|-------|
-| Code quality | S | Strict lints, no unsafe, `#![deny(clippy::unwrap_used)]`. |
-| Test coverage | S | 214 tests; fixtures cover renamed imports, glob imports, derive macros, path deps. |
-| Architecture | A | CLI refactored from a 1,200-line `main.rs` into `src/cli/` subcommand modules. |
-| Performance | A | Synchronous, no runtime; Criterion benches for hot paths and the library feature. |
-| Observability | B+ | Structured `tracing` logging; no metrics (acceptable for a CLI). |
-| Documentation | A- | README, man page, ARCHITECTURE, MIGRATION, OPERATOR_RUNBOOK, directives, VHS demos. |
+Feature flags:
 
-### Correctness of analysis — B+ (up from B)
-
-- **Fixed today (0.3.0):** hyphenated crates (`comfy-table` seen as
-  `comfy_table`) and call-site-only dependencies (`toml::from_str`) were
-  reported as unused in every output format. Self-analysis now shows real usage
-  for all 14 direct dependencies.
-- **Remaining by-design limitation:** syntax-only method-call attribution can
-  misattribute `x.foo()` without type inference. Documented and bounded; not a
-  blocker for a recommendation tool, but must be disclosed in enterprise docs.
-
-### Security — A-
-
-- RustSec advisory integration with XDG-compliant cache (fixed since 0.2.6).
-- CVE count overrides classification to `SecurityCritical`; never-replace list
-  for crypto/TLS/runtime crates.
-- **Open:** `--output`/`out_dir` paths are not validated against traversal;
-  `git`/`cargo` subprocesses inherit the user's environment; `Validator` runs
-  `cargo check` unsandboxed. All acceptable for a local dev tool, all must be
-  documented or hardened before GA.
-
-### CI / Build / Release — C (regressed from A)
-
-- **Blocker:** standalone build failure (see Executive Summary). Every job in
-  `.github/workflows/ci.yml` (`build --all-features`, MSRV, coverage) fails on
-  a clean runner because `../padagonia` is absent.
-- Present and good: fmt/clippy/tests/audit gate, MSRV job read from
-  `Cargo.toml`, Linux/macOS/Windows release matrix, SHA-256 checksums,
-  upload-before-sign ordering, GPG signing that no-ops cleanly without a key.
-- **Missing:** Dependabot, SBOM generation, provenance attestation, scheduled
-  (not just PR-triggered) `cargo audit`, coverage gate that fails under 95%,
-  self-analysis regression gate (roadmap item).
-
-### Distribution & governance — D
-
-- Not published to crates.io; install is `cargo install --path .`.
-- No `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`.
-- Git history initialized 2026-07-11; no remote configured; previously the tree
-  lived untracked inside another repository.
-- Website contains fabricated release notes and a pricing page (see Executive
-  Summary, item 3).
-- `Cargo.toml` metadata otherwise complete (license, repository, description).
-
-### Configuration — A (up from B+)
-
-- Weights are now wired: `SafetyClassifier::with_weights`, validated
-  (non-negative, finite, sum ≈ 1.0) in `src/config/mod.rs`, with a test proving
-  custom weights change scores.
-- Remaining minor gap: no published JSON/TOML schema for `.amber.toml`.
-
-### Replacement generation — B+ (up from B)
-
-- Templates added for `tracing`, `tracing-subscriber`, `toml`, `ureq`;
-  validation via `cargo check` before reporting; `used_in_public_api` now
-  populated and consumed by validation strategy.
-- Still compile-only validation (no behavioral equivalence) and hard-coded
-  compile-time/binary-size estimates — acceptable, must stay documented.
+```text
+default = []
+online = ["dep:ureq"]
+library = ["dep:padagonia"]
+migrate = ["dep:toml_edit"]
+daemon = ["library"]
+```
 
 ---
 
-## Aggregate Scorecard
+## Enterprise readiness
 
-| Area | 0.2.6 | 0.3.0 | Delta |
-|------|-------|-------|-------|
-| Code quality | A | S | ⬆ |
-| Test coverage | S | S | — |
-| Architecture | A | A | — |
-| Security | A- | A- | — |
-| Performance | A | A | — |
-| Observability | B+ | B+ | — |
-| Configurability | B+ | A | ⬆ |
-| Operational readiness | A | C | ⬇ (standalone build) |
-| Documentation | A- | A- | — |
-| Correctness / heuristics | B+ | B+ | ⬆ within grade (unused-detection fix) |
-| Distribution & governance | — | D | new axis |
-
-**Overall: A-** — S-grade engineering core, release blocked by buildability,
-governance, and distribution gaps.
+| Area | Grade | Assessment |
+|------|-------|------------|
+| Code quality | S | Strict lints, no production `unsafe`, clear module boundaries. |
+| Test posture | S | Broad unit/CLI/integration coverage; all-feature suite passes. |
+| Security posture | A- | RustSec integration, audit gate, no unsafe; subprocess and generated-code validation remain local-trust operations. |
+| CI | A | fmt, clippy, builds, tests, audit, MSRV, coverage, fuzz smoke, self-analysis, release artifact flow. |
+| Release supply chain | B | Checksums, SBOM, provenance, optional GPG; signing keys and crates.io path still incomplete. |
+| Distribution | C+ | Source installs work; crates.io is blocked by git `padagonia`. |
+| Operability | B+ | Runbook, SARIF, exit codes, daemon docs, cache locking; daemon still needs long-running field data. |
+| Observability | B | Structured tracing exists; no metrics endpoint, health command, or daemon status command. |
 
 ---
 
-## Appendix A: Traceability from the 0.2.6 assessment
+## Daemon readiness
 
-| 0.2.6 A→S item | Status at 0.3.0 |
-|----------------|-----------------|
-| Wire config weights into scoring | ✅ Done (`with_weights` + validation + test) |
-| Standard cache directory for RustSec DB | ✅ Done (XDG_CACHE_HOME, `src/metadata/rustsec.rs:26`) |
-| Populate `used_in_public_api` | ✅ Done (visitor tracks `pub` items/impls) |
-| MSRV policy and CI job | ✅ Done (`rust-version = "1.85"`, `msrv` job) |
-| Robust transitive resolution | ✅ Done (full `cargo_metadata` resolve graph, renamed deps) |
-| SARIF rule metadata | ✅ Done (`fullDescription`, `defaultConfiguration`, `help`) |
-| Signed checksums + cross-platform builds | ✅ Done (matrix builds, SHA-256, optional GPG) — signing unarmed |
-| Crate-aware API-count estimate | ✅ Done (`Dependency.public_api_count` with LOC fallback) |
-| Refresh stale `COVERAGE_95_ROADMAP.md` | ⚠️ Still present; superseded by this document |
-| Unused-dependency false positives (found after 0.2.6) | ✅ Done (0.3.0, hyphenated + call-site-only) |
+The daemon is intentionally lightweight:
 
-## Appendix B: Known limitations to disclose to enterprise users
+- defaults to monitoring `$HOME`;
+- discovers Amber-compatible `Cargo.toml` files;
+- skips heavy directories such as `.git`, `target`, `node_modules`, `.cache`,
+  `.cargo`, `.rustup`, `dist`, and `build`;
+- writes `.amber/daemon.toml` markers;
+- hashes dependency tables for near-instant change detection;
+- avoids full analysis for source-only edits unless `--analyze-source-changes`
+  is enabled;
+- stores JSON analysis snapshots in a Padagonia cache;
+- holds an exclusive `.lock` file next to the cache;
+- compacts to the latest entry per project and evicts missing/stale entries.
 
-1. Syntax-only analysis: method calls without imports may be misattributed.
-2. Replacement validation is compile-only, not behavioral.
-3. Compile-time/binary-size estimates are heuristic lookup tables.
-4. `online` and `library` features are off by default; offline scoring uses
-   neutral metadata defaults.
+Remaining daemon gaps:
+
+1. No native `status`, `stop`, or health-check subcommand.
+2. No first-party systemd installer; docs provide a unit template only.
+3. No resource telemetry beyond logs and scan summaries.
+4. No soak-test data on very large home directories.
+5. RustSec advisory cache lock contention can still appear during parallel test
+   or analysis runs.
+
+---
+
+## Human operability
+
+Strengths:
+
+- Clear CLI help and examples.
+- `--once` enables safe daemon trials and CI smoke tests.
+- Exit codes are documented and CI-friendly.
+- SARIF works for security/code-scanning workflows.
+- JSON output supports agent and automation consumption.
+- `.amber.toml` policy lets teams suppress or enforce known decisions.
+- Path validation prevents report/proposal writes outside the project root.
+
+Recently fixed:
+
+- Local PATH shadowing was corrected on this workstation by replacing the stale
+  `/home/sal/.local/bin/amber` with the daemon-capable binary.
+
+Remaining UX gaps:
+
+1. Feature-gated commands are invisible unless users install the right feature
+   set; docs must keep showing exact install commands.
+2. `amber daemon` needs a status-oriented operator surface.
+3. Replacement proposals still require human review and behavioral tests.
+4. The manual page should be regenerated to include `daemon` and `migrate`.
+
+---
+
+## GA blockers
+
+1. Publish `padagonia` to crates.io or vendor the required storage layer.
+2. Make `cargo publish --dry-run` pass for tags.
+3. Publish and document the GPG signing key; require signed checksums for GA.
+4. Add daemon soak testing against a large synthetic tree.
+5. Add daemon status/health output.
+6. Regenerate the man page for feature-gated commands.
+7. Re-baseline coverage after daemon and migrate additions.
+
+---
+
+## Known limitations to disclose
+
+1. Syntax-only analysis can miss macro-expanded, generated, or type-inferred
+   usage.
+2. Replacement validation is compile-only, not behavioral equivalence.
+3. Compile-time and binary-size estimates are heuristic.
+4. Online metadata requires the `online` feature and network access.
+5. The daemon is a polling monitor, not an OS-native filesystem event watcher.
+6. Daemon cache entries contain full JSON analysis snapshots; treat the cache as
+   local developer metadata.

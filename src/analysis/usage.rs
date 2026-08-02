@@ -19,7 +19,6 @@ use super::types::{
 
 /// Analyzes how dependencies are actually used in source code
 pub struct UsageAnalyzer {
-    source_root: PathBuf,
     manifest_dir: PathBuf,
 }
 
@@ -35,12 +34,7 @@ impl UsageAnalyzer {
             .context("Invalid manifest path")?
             .to_path_buf();
 
-        let source_root = manifest_dir.join("src");
-
-        Ok(Self {
-            source_root,
-            manifest_dir,
-        })
+        Ok(Self { manifest_dir })
     }
 
     /// Analyze usage for all dependencies.
@@ -178,37 +172,13 @@ impl UsageAnalyzer {
     }
 
     fn find_rust_files(&self) -> Vec<PathBuf> {
-        let mut files = Vec::new();
-
-        if self.source_root.exists() {
-            for entry in WalkDir::new(&self.source_root)
-                .into_iter()
-                .filter_map(std::result::Result::ok)
-            {
-                let path = entry.path();
-                if path.extension().is_some_and(|e| e == "rs") {
-                    files.push(path.to_path_buf());
-                }
-            }
-        }
-
-        // Also check examples, tests, benches
-        for dir in &["examples", "tests", "benches"] {
-            let dir_path = self.manifest_dir.join(dir);
-            if dir_path.exists() {
-                for entry in WalkDir::new(&dir_path)
-                    .into_iter()
-                    .filter_map(std::result::Result::ok)
-                {
-                    let path = entry.path();
-                    if path.extension().is_some_and(|e| e == "rs") {
-                        files.push(path.to_path_buf());
-                    }
-                }
-            }
-        }
-
-        files
+        WalkDir::new(&self.manifest_dir)
+            .into_iter()
+            .filter_map(std::result::Result::ok)
+            .map(|entry| entry.path().to_path_buf())
+            .filter(|path| path.extension().is_some_and(|extension| extension == "rs"))
+            .filter(|path| !has_ignored_component(path, &self.manifest_dir))
+            .collect()
     }
 
     fn analyze_file_usage(
@@ -242,6 +212,18 @@ impl UsageAnalyzer {
         // Second pass: collect all usages (imports populate imported_name_map)
         visitor.visit_file(&ast);
     }
+}
+
+fn has_ignored_component(path: &Path, root: &Path) -> bool {
+    const IGNORED: &[&str] = &[".git", "target", "node_modules", ".amber", ".kaptaind"];
+    path.strip_prefix(root).is_ok_and(|relative| {
+        relative.components().any(|component| {
+            component
+                .as_os_str()
+                .to_str()
+                .is_some_and(|name| IGNORED.contains(&name))
+        })
+    })
 }
 
 struct AliasCollector<'a> {
@@ -1217,6 +1199,23 @@ mod tests {
         let analyzer = UsageAnalyzer::new(&manifest_path).unwrap();
         let files = analyzer.find_rust_files();
         assert_eq!(files.len(), 4);
+    }
+
+    #[test]
+    fn discovers_workspace_member_sources_and_skips_target() {
+        let temp = crate::temp::tempdir().unwrap();
+        let manifest_path = temp.path().join("Cargo.toml");
+        fs::write(&manifest_path, "[workspace]\nmembers = [\"crates/app\"]\n").unwrap();
+        let member_src = temp.path().join("crates/app/src");
+        fs::create_dir_all(&member_src).unwrap();
+        fs::write(member_src.join("lib.rs"), "pub fn app() {}\n").unwrap();
+        let target_src = temp.path().join("target/generated");
+        fs::create_dir_all(&target_src).unwrap();
+        fs::write(target_src.join("ignored.rs"), "pub fn ignored() {}\n").unwrap();
+
+        let analyzer = UsageAnalyzer::new(&manifest_path).unwrap();
+        let files = analyzer.find_rust_files();
+        assert_eq!(files, vec![member_src.join("lib.rs")]);
     }
 
     #[test]

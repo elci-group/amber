@@ -6,10 +6,14 @@
 #![warn(clippy::pedantic, clippy::nursery)]
 
 pub mod analyze;
+#[cfg(feature = "daemon")]
+pub mod daemon;
 pub mod directives;
 #[cfg(feature = "library")]
 pub mod library;
 pub mod list;
+#[cfg(feature = "migrate")]
+pub mod migrate;
 pub mod paths;
 pub mod replace;
 pub mod roadmap;
@@ -235,6 +239,57 @@ named crate, including the API surface to cover and the validation steps.")]
         #[command(subcommand)]
         command: LibraryCommands,
     },
+    /// Migrate a dependency to a replacement module (requires `migrate` feature)
+    #[cfg(feature = "migrate")]
+    #[command(long_about = "\
+Apply a validated replacement module to the target project: copy the module \
+into src/, declare it in lib.rs or main.rs, rewrite `use <crate>::` paths to \
+the new module name, remove the dependency from Cargo.toml, and run `cargo \
+check`. If the check fails, every change is rolled back. Use --dry-run to \
+preview the planned changes without writing anything.")]
+    Migrate {
+        /// Crate to migrate away from
+        crate_name: String,
+        /// Path to the replacement module file (e.g. `amber_out/amber_anyhow.rs`)
+        #[arg(long)]
+        replace_with: PathBuf,
+        /// Print the planned changes without writing anything
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Monitor directories for Cargo projects and cache Amber analysis.
+    #[cfg(feature = "daemon")]
+    #[command(long_about = "\
+Scan the target tree for Amber-compatible Cargo projects, create lightweight \
+.amber metadata files, perform cheap dependency-diff checks, and run full \
+Amber analysis only when a project is new or its dependency fingerprint \
+changes. Analysis snapshots are stored in a Padagonia-backed cache.")]
+    Daemon {
+        /// Root directory to monitor. Defaults to the user's home directory.
+        #[arg(long)]
+        root: Option<PathBuf>,
+        /// Poll interval in seconds for continuous monitoring.
+        #[arg(long, default_value_t = 30)]
+        interval_secs: u64,
+        /// Run one scan and exit.
+        #[arg(long)]
+        once: bool,
+        /// Path to the Padagonia analysis cache file.
+        #[arg(long)]
+        cache: Option<PathBuf>,
+        /// Maximum number of projects to analyze per scan.
+        #[arg(long, default_value_t = 32)]
+        max_projects: usize,
+        /// Run full analysis when Rust source files changed but dependencies did not.
+        #[arg(long)]
+        analyze_source_changes: bool,
+        /// Maximum analysis snapshots retained in the Padagonia cache.
+        #[arg(long, default_value_t = 512)]
+        max_cache_entries: usize,
+        /// Maximum cache entry age in days before compaction evicts it.
+        #[arg(long, default_value_t = 90)]
+        cache_max_age_days: u64,
+    },
 }
 
 #[cfg(feature = "library")]
@@ -292,7 +347,13 @@ pub fn run_cli() -> ! {
 /// Returns an error if command execution fails.
 pub fn execute(cli: &Cli) -> Result<i32> {
     init_tracing(cli.verbose);
-    roadmap::print_banner();
+    // Keep stdout machine-parseable for JSON/PR/SARIF reports: no banner.
+    if !matches!(
+        cli.output_format(),
+        OutputFormat::Json | OutputFormat::Pr | OutputFormat::Sarif
+    ) {
+        roadmap::print_banner();
+    }
 
     let manifest_path = if cli.path.join("Cargo.toml").exists() {
         cli.path.join("Cargo.toml")
@@ -315,6 +376,9 @@ fn init_tracing(verbose: u8) {
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(filter)),
         )
+        // Logs are diagnostics: keep them off stdout so machine-readable
+        // reports (JSON/PR/SARIF) stay parseable.
+        .with_writer(std::io::stderr)
         .without_time();
 
     // At higher verbosity levels include the target/module path to make
@@ -353,6 +417,35 @@ pub fn run(cli: &Cli, manifest_path: &Path) -> Result<i32> {
         }
         #[cfg(feature = "library")]
         Some(Commands::Library { command }) => library::run(cli, manifest_path, command),
+        #[cfg(feature = "migrate")]
+        Some(Commands::Migrate {
+            crate_name,
+            replace_with,
+            dry_run,
+        }) => migrate::run(manifest_path, crate_name, replace_with, *dry_run),
+        #[cfg(feature = "daemon")]
+        Some(Commands::Daemon {
+            root,
+            interval_secs,
+            once,
+            cache,
+            max_projects,
+            analyze_source_changes,
+            max_cache_entries,
+            cache_max_age_days,
+        }) => daemon::run(
+            cli,
+            daemon::RunOptions {
+                root: root.as_deref(),
+                interval_secs: *interval_secs,
+                once: *once,
+                cache: cache.as_deref(),
+                max_projects: *max_projects,
+                analyze_source_changes: *analyze_source_changes,
+                max_cache_entries: *max_cache_entries,
+                cache_max_age_days: *cache_max_age_days,
+            },
+        ),
         Some(Commands::Analyze { output }) => {
             info!("Starting full repository analysis...");
             analyze::run(cli, manifest_path, output.as_deref())

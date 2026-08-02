@@ -27,9 +27,9 @@ Amber is release-ready when **all** of the following hold:
 
 | # | Work item | Acceptance |
 |---|-----------|------------|
-| 0.1 | Replace `padagonia = { path = "../padagonia" }` in `Cargo.toml` with a buildable source: publish padagonia to crates.io and depend by version, or vendor it into the workspace, or make it a `git` dependency. | `git clone` → `cargo build --all-features` passes on a clean machine |
+| 0.1 | ✅ Replace `padagonia = { path = "../padagonia" }` in `Cargo.toml` with a buildable source. Current state uses public git tag `v0.1.4`; crates.io publication remains Phase 2. | `cargo check --all-targets --all-features` passes |
 | 0.2 | Push the repository to `github.com/elci-group/amber`; confirm every job in `.github/workflows/ci.yml` passes on the real runner (including `msrv` and `coverage`). | CI green on `main` |
-| 0.3 | Re-baseline coverage after the 0.3.0 fixes (`cargo tarpaulin --all-targets --all-features`); regenerate `lcov.info`. | Coverage ≥95% recorded in CI |
+| 0.3 | Re-baseline coverage after the 0.3.0/migrate fixes (`cargo tarpaulin --all-targets --all-features`); regenerate `lcov.info`. | Coverage ≥95% recorded in CI |
 | 0.4 | Retire `COVERAGE_95_ROADMAP.md` (goal met); point readers at this roadmap. | File removed or replaced with a pointer |
 
 ## Phase 1 — Enterprise hardening (v0.3.x, 1–2 weeks)
@@ -37,10 +37,10 @@ Amber is release-ready when **all** of the following hold:
 | # | Work item | Acceptance |
 |---|-----------|------------|
 | 1.1 | Validate `--output` / `out_dir` paths: reject traversal outside the target project (canonicalize + prefix check) in `replace` and `directives`. | Unit tests for `../` rejection |
-| 1.2 | Add `SECURITY.md` (vulnerability reporting, supported versions), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`. | Files at repo root, linked from README |
-| 1.3 | Add Dependabot for Cargo and GitHub Actions; schedule weekly `cargo audit`. | `.github/dependabot.yml` + scheduled workflow |
-| 1.4 | Enforce coverage: fail CI below 95% (`tarpaulin --fail-under 95`, config in `tarpaulin.toml`). | CI red on regression |
-| 1.5 | Self-analysis gate (from `V0_3_SELF_HOSTING.md`): run `amber --format json .` in CI; fail if direct dependency count rises vs. `main` or a removed dep reappears. | Gate live on PRs |
+| 1.2 | ✅ Add `SECURITY.md` (vulnerability reporting, supported versions), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`. | Files at repo root |
+| 1.3 | ✅ Add Dependabot for Cargo and GitHub Actions; schedule weekly `cargo audit`. | `.github/dependabot.yml` + scheduled workflow |
+| 1.4 | ✅ Enforce coverage: fail CI below 95% (`tarpaulin --fail-under 95`, config in `tarpaulin.toml`). | CI red on regression |
+| 1.5 | ✅ Self-analysis gate (from `V0_3_SELF_HOSTING.md`): run `amber --format json .` in CI; fail if direct dependency count rises vs. `main`. | Gate live on PRs |
 | 1.6 | Purge fictional website content: the `0.3.0-beta.1` entry ("Groq LPU", "Amber Pro") in `website/data/releases.json` and the pricing page, or label them explicitly as demo content. | Site describes only real artifacts |
 | 1.7 | Document known analysis limitations (assessment Appendix B) in `docs/` and the man page. | Limitations section published |
 

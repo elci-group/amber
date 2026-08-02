@@ -27,8 +27,9 @@ src/
 │   └── validator.rs    # cargo check validation of generated code
 ├── reporting/          # Output formats
 │   └── formatters.rs   # Console, JSON, PR, SARIF reporters
-└── config/             # User configuration
-    └── mod.rs          # .amber.toml parsing and policy checks
+├── config/             # User configuration
+│   └── mod.rs          # .amber.toml parsing and policy checks
+└── daemon.rs           # Optional home monitor and Padagonia analysis cache
 ```
 
 ## Data flow
@@ -71,6 +72,10 @@ Cargo.toml ──► RepositoryAnalyzer ──► Vec<Dependency>
   receiver path or method name unambiguously maps to a tracked dependency.
 - **Confidence scoring**: Each score carries a separate confidence value based
   on usage visibility, independent of the overall replaceability score.
+- **Lightweight daemon**: The optional `daemon` feature adds a polling monitor
+  that discovers Cargo manifests, writes `.amber/daemon.toml` project markers,
+  fingerprints dependency tables before full analysis, and stores JSON analysis
+  snapshots in a Padagonia cache.
 
 ## Adding a new replacement template
 

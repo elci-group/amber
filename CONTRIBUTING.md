@@ -22,7 +22,7 @@ cargo fmt --check
 cargo clippy --all-targets -- -W clippy::pedantic -W clippy::nursery -D warnings
 cargo test --all-targets
 cargo tarpaulin --all-targets --fail-under 95   # coverage floor
-cargo audit
+cargo audit --deny warnings --ignore RUSTSEC-2025-0141
 ```
 
 ## Conventions

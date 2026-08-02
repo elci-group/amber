@@ -47,11 +47,30 @@ jobs:
       - name: Run tests with all features
         run: cargo test --all-targets --all-features
 
+      - name: Daemon smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          mkdir -p "$tmp/app/src"
+          cat > "$tmp/app/Cargo.toml" <<'TOML'
+          [package]
+          name = "amber-daemon-smoke"
+          version = "0.1.0"
+          edition = "2021"
+          TOML
+          echo 'pub fn demo() {}' > "$tmp/app/src/lib.rs"
+          cargo run --quiet --features daemon -- daemon --once --root "$tmp" --cache "$tmp/analysis.pad"
+          test -f "$tmp/analysis.pad"
+          test -f "$tmp/app/.amber/daemon.toml"
+
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
       - name: Security audit
-        run: cargo audit
+        # RUSTSEC-2025-0141 is inherited from optional padagonia -> bincode 1.3.
+        # Keep warnings denied for everything else until padagonia migrates.
+        run: cargo audit --deny warnings --ignore RUSTSEC-2025-0141
 
   msrv:
     runs-on: ubuntu-latest
@@ -70,8 +89,8 @@ jobs:
           toolchain: ${{ steps.msrv.outputs.version }}
 
       - name: Check MSRV
-        # Default features only: the optional `library` feature pulls in
-        # padagonia, whose MSRV (1.85) is higher than amber's (1.80).
+        # Default features only: optional features may pull their own dependency
+        # stacks; Amber's declared MSRV is checked here.
         run: cargo +${{ steps.msrv.outputs.version }} check --all-targets
 
   coverage:

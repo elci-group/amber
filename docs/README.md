@@ -10,6 +10,8 @@ This directory holds the long-form documentation for Amber. The top-level
   editable source is [`man/amber.1.md`](man/amber.1.md).
 - [`library.md`](library.md) — the optional Padagonia replacement library:
   storing, importing, forking, and exporting generated modules.
+- [`daemon.md`](daemon.md) — the optional home-directory monitor, analysis
+  cache, lock file, retention policy, and systemd user-service example.
 - [`OPERATOR_RUNBOOK.md`](OPERATOR_RUNBOOK.md) — day-to-day operation, output
   formats, policy files, and troubleshooting.
 

@@ -51,6 +51,7 @@ default = []
 online = ["dep:ureq"]
 library = ["dep:padagonia"]
 migrate = ["dep:toml_edit"]
+daemon = ["library"]
 
 [dev-dependencies]
 criterion = "0.7.0"

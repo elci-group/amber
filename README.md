@@ -56,6 +56,7 @@ Build with optional features as needed:
 ```bash
 cargo install --path . --features online    # live crates.io metadata
 cargo install --path . --features library   # Padagonia replacement library
+cargo install --path . --features daemon    # home-directory monitor and analysis cache
 ```
 
 ## Quick start
@@ -88,6 +89,7 @@ amber replace anyhow --out-dir amber_out
 | `amber replace <crate> [-o DIR]` | Generate a validated replacement module (default dir `amber_out`). |
 | `amber directives <crate> [-o FILE]` | Emit a scoped, implementation-ready replacement directive. |
 | `amber migrate <crate> --replace-with <FILE> [--dry-run]` | Apply a replacement module: rewrite imports, remove the dependency, verify with `cargo check`, roll back on failure (`migrate` feature). |
+| `amber daemon [--once] [--root DIR]` | Monitor for Cargo projects, create `.amber/daemon.toml` markers, and cache JSON analysis snapshots in Padagonia (`daemon` feature). |
 | `amber roadmap` | Show Amber's internal module roadmap. |
 | `amber library …` | Manage the replacement library (`library` feature). |
 
@@ -161,6 +163,8 @@ GIFs are written to `docs/vhs/out/`; the two emoji demos are also copied to
 - [`docs/README.md`](docs/README.md) — documentation index.
 - [`docs/man/amber.1`](docs/man/amber.1) — manual page (install to a manpath and
   run `man amber`).
+- [`docs/daemon.md`](docs/daemon.md) — optional daemon operation, cache locking,
+  retention, and systemd setup.
 - [`docs/vhs/README.md`](docs/vhs/README.md) — recording pipeline and privacy model.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — internal design.
 
@@ -170,7 +174,7 @@ GIFs are written to `docs/vhs/out/`; the two emoji demos are also copied to
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
-cargo audit
+cargo audit --deny warnings --ignore RUSTSEC-2025-0141
 ```
 
 ## License

@@ -94,6 +94,41 @@ named crate.
 .B library
 (\fBlibrary\fR feature) Manage the Padagonia replacement module library:
 \fBlist\fR, \fBimport\fR, \fBexport\fR.
+.TP
+.BI migrate " crate" " \fB\-\-replace\-with\fR file [\fB\-\-dry\-run\fR]"
+(\fBmigrate\fR feature) Rewrite imports, remove the dependency, validate with
+.B cargo check
+and roll back on failure.
+.TP
+.B daemon
+(\fBdaemon\fR feature) Monitor a directory tree for Cargo projects, create
+.B .amber/daemon.toml
+markers, and cache JSON analysis snapshots in Padagonia.
+.SS Daemon options
+.TP
+.BI \-\-root " dir"
+Directory tree to monitor. Defaults to the user's home directory.
+.TP
+.BI \-\-interval\-secs " n"
+Polling interval for continuous mode. Default: 30.
+.TP
+.B \-\-once
+Run one scan and exit.
+.TP
+.BI \-\-cache " path"
+Padagonia analysis cache path.
+.TP
+.BI \-\-max\-projects " n"
+Maximum Cargo projects analyzed per scan. Default: 32.
+.TP
+.B \-\-analyze\-source\-changes
+Run full analysis when Rust source files changed but dependency tables did not.
+.TP
+.BI \-\-max\-cache\-entries " n"
+Maximum retained analysis snapshots. Default: 512.
+.TP
+.BI \-\-cache\-max\-age\-days " n"
+Maximum retained snapshot age. Default: 90.
 .SH OUTPUT FORMATS
 .TP
 .B console
@@ -144,6 +179,12 @@ Per-project configuration.
 .B amber_out/
 Default directory for generated replacement modules.
 .TP
+.B .amber/daemon.toml
+Daemon project marker written by the \fBdaemon\fR feature.
+.TP
+.B ~/.amber/analysis-cache.pad
+Default Padagonia-backed daemon analysis cache.
+.TP
 .B docs/man/amber.1
 This manual page.
 .SH ENVIRONMENT
@@ -169,12 +210,16 @@ amber replace serde \-\-out-dir out
 
 # Scoped replacement directive for CI review
 amber directives colored \-o colored.md
+
+# One daemon scan of a workspace tree
+amber daemon \-\-once \-\-root ~/work
 .fi
 .SH SEE ALSO
 .BR cargo (1)
 .PP
 Reproducible demo recordings: \fBdocs/vhs/README.md\fR.
 Project documentation index: \fBdocs/README.md\fR.
+Daemon operation: \fBdocs/daemon.md\fR.
 .SH LIMITATIONS
 .TP
 \(bu
@@ -194,5 +239,8 @@ Compile-time and binary-size estimates are heuristics, not measurements.
 Offline scoring uses neutral metadata defaults; maintenance/download data
 needs the \fBonline\fR feature, and CVE counts need the RustSec advisory
 database.
+.TP
+\(bu
+The daemon is a polling monitor, not an OS-native filesystem event watcher.
 .SH AUTHOR
 Amber contributors. MIT licence.

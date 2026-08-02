@@ -14,16 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fuzz target for `.amber.toml` parsing (`fuzz/`, PR smoke-test job).
 - Dependency scorecard in `DEPENDENCIES.md`; self-analysis CI gate that fails
   PRs growing the direct dependency count.
-
-### Changed
-
-- **MSRV raised from 1.80 to 1.85** (enforced by the `msrv` CI job).
-- `rustsec` updated to 0.31, fixing advisory-database load failures on
-  CVSS 4.0 advisories (the whole DB previously failed to open, silently
-  zeroing CVE counts).
-
-### Fixed
-
 - Optional `migrate` feature adding the `amber migrate <crate> --replace-with
   <FILE> [--dry-run]` subcommand. It applies a validated replacement module to
   the target project end to end: verifies the crate is a direct dependency,
@@ -34,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in-memory snapshots when the check fails; `--dry-run` previews the plan.
   Covered by the `tests/fixtures/migrate_project` fixture and
   `tests/migrate_tests.rs`.
+
+### Changed
+
+- **MSRV raised from 1.80 to 1.85** (enforced by the `msrv` CI job).
+- `rustsec` updated to 0.31, fixing advisory-database load failures on
+  CVSS 4.0 advisories (the whole DB previously failed to open, silently
+  zeroing CVE counts).
 
 ## [0.3.0] - 2026-07-11
 

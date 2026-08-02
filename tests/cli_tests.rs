@@ -58,6 +58,50 @@ fn analyze_command_outputs_report() {
 }
 
 #[test]
+fn json_format_stdout_is_pure_json() {
+    let path = fixture_path("sample_project");
+    let (status, stdout, _stderr) = run(&[
+        "--threshold",
+        "100",
+        "--format",
+        "json",
+        path.to_str().unwrap(),
+        "analyze",
+    ]);
+    // Findings above the threshold exit 1 by design; only hard errors (2)
+    // are failures for this check.
+    assert!(status.code() != Some(2), "amber errored: {status}");
+    let trimmed = stdout.trim_start();
+    assert!(
+        trimmed.starts_with('{'),
+        "JSON report must be the first thing on stdout, got: {trimmed:.80}"
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(trimmed).expect("stdout is not valid JSON");
+    assert!(parsed.get("results").is_some(), "missing results array");
+}
+
+#[test]
+fn sarif_format_stdout_is_pure_json() {
+    let path = fixture_path("sample_project");
+    let (status, stdout, _stderr) = run(&[
+        "--threshold",
+        "100",
+        "--format",
+        "sarif",
+        path.to_str().unwrap(),
+        "analyze",
+    ]);
+    assert!(status.code() != Some(2), "amber errored: {status}");
+    let trimmed = stdout.trim_start();
+    assert!(
+        trimmed.starts_with('{'),
+        "SARIF report must be the first thing on stdout, got: {trimmed:.80}"
+    );
+    serde_json::from_str::<serde_json::Value>(trimmed).expect("stdout is not valid JSON");
+}
+
+#[test]
 fn analyze_json_outputs_valid_report() {
     let path = fixture_path("sample_project");
     let (status, stdout, _) = run(&[
@@ -153,6 +197,40 @@ fn verbose_flag_is_accepted() {
     let path = fixture_path("sample_project");
     let (status, _, _) = run(&["-v", path.to_str().unwrap(), "list"]);
     assert!(status.success());
+}
+
+#[cfg(feature = "daemon")]
+#[test]
+fn daemon_once_creates_marker_and_cache() {
+    use std::fs;
+    let stamp = std::process::id();
+    let base = std::env::temp_dir().join(format!("amber-daemon-cli-{stamp}"));
+    let _ = fs::remove_dir_all(&base);
+    fs::create_dir_all(base.join("app/src")).expect("create src");
+    fs::write(
+        base.join("app/Cargo.toml"),
+        "[package]\nname = \"daemonapp\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    )
+    .expect("write manifest");
+    fs::write(base.join("app/src/lib.rs"), "pub fn demo() {}\n").expect("write source");
+
+    let cache = base.join("analysis.pad");
+    let (status, stdout, stderr) = run(&[
+        "daemon",
+        "--once",
+        "--root",
+        base.to_str().unwrap(),
+        "--cache",
+        cache.to_str().unwrap(),
+    ]);
+    assert!(status.success(), "daemon failed: {stderr}");
+    assert!(stdout.contains("scanned 1 project(s)"));
+    assert!(cache.exists(), "analysis cache should be created");
+    assert!(
+        base.join("app/.amber/daemon.toml").exists(),
+        "project marker should be created"
+    );
+    fs::remove_dir_all(base).expect("remove temp project");
 }
 
 #[cfg(feature = "library")]

@@ -12,6 +12,8 @@ pub mod amber_anyhow;
 pub mod analysis;
 pub mod cli;
 pub mod config;
+#[cfg(feature = "daemon")]
+pub mod daemon;
 pub mod metadata;
 pub mod replacement;
 pub mod reporting;
