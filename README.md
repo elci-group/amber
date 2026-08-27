@@ -60,6 +60,14 @@ requirements, and explicit human-review gates. The `portfolio` module adds a
 cross-dependency pass for supplier concentration, duplicated capabilities, and
 aggregate maintenance and licensing risk.
 
+### Inter-system workflow
+
+Amber consumes lwoodz's versioned observation contracts and Padagonia's
+versioned component graph. Evidence, policy version, confidence, and
+human-review requirements remain attached to each decision record, so plans
+can move into release and provenance tooling without conflating observation,
+structure, and strategy.
+
 ## Installation
 
 Requires Rust **1.85** or newer.
