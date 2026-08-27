@@ -1,5 +1,6 @@
 # Common
 .git
+# Runtime state is local and must never be versioned.
 .kaptaind
 .DS_Store
 *.swp
