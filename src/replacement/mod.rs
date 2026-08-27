@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 pub mod directives;
 pub mod generator;
 pub mod templates;

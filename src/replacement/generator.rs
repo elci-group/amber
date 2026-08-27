@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::amber_anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
@@ -150,7 +152,7 @@ impl Generator {
             );
         }
 
-        info!("Replacement for {} passed validation", crate_name);
+        info!(crate = %crate_name, "replacement passed validation");
 
         Ok(ReplacementProposal {
             original_crate: crate_name.to_string(),
@@ -185,7 +187,7 @@ impl Generator {
         library: &mut LibraryStore,
     ) -> Result<ReplacementProposal> {
         if let Some(entry) = library.find(crate_name) {
-            info!("Loaded replacement for {crate_name} from library");
+            info!(crate = %crate_name, "loaded replacement from library");
             return Ok(ReplacementProposal {
                 original_crate: crate_name.to_string(),
                 replacement_module: entry.module_name,

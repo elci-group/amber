@@ -1,0 +1,13 @@
+# Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+# SPDX-License-Identifier: MIT
+[analysis]
+fail_on = "error"
+production_only = true
+require_correlation_id = false
+ignore = ["target", ".git", ".traci", "src/replacement/template_data", "amber_out", "amber_proposals", "benches_out"]
+enabled_rules = ["TRC001", "TRC002", "TRC003", "TRC004", "TRC005", "TRC006", "TRC007", "TRC008"]
+
+[ui]
+color = "auto"
+emoji = true
+animate = true

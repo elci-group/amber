@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `list` subcommand.
 use crate::amber_anyhow::Result;
 
@@ -12,7 +14,7 @@ use tracing::info;
 ///
 /// Returns an error if dependency analysis fails.
 pub fn run(cli: &Cli, manifest_path: &Path) -> Result<i32> {
-    info!("Listing all dependencies...");
+    info!(manifest = %manifest_path.display(), transitive = cli.transitive, include_dev = !cli.no_dev, "listing dependencies");
     let analyzer = build_analyzer(manifest_path, cli)?;
     let deps = analyzer.list_dependencies(cli.transitive, !cli.no_dev)?;
     if matches!(cli.output_format(), OutputFormat::Emoji) {

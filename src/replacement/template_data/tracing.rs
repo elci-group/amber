@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_tracing — Minimal replacement for the `tracing` crate
 //!
 //! Provides drop-in macros for `info!`, `debug!`, `warn!`, `error!`, and `trace!`

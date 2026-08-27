@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Amber — Autonomous Dependency Reduction Engine
 //!
 //! Library crate for analyzing Rust projects and scoring dependencies
@@ -19,6 +21,7 @@ pub mod replacement;
 pub mod reporting;
 pub mod scoring;
 pub mod temp;
+pub mod transformation;
 
 #[cfg(feature = "library")]
 pub mod library;

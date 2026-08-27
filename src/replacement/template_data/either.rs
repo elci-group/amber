@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_either — Replacement for the `either` crate
 //!
 //! Provides Either<L, R> for dual-type contexts.

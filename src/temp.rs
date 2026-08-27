@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Internal temporary-directory helpers.
 //!
 //! Std-only replacement for the `tempfile` crate. Creates uniquely-named

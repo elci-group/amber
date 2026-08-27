@@ -1,11 +1,14 @@
+# Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+# SPDX-License-Identifier: MIT
 [package]
 name = "amber"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["SVCH <svch@seriousaboutsolutions.co.uk>"]
 description = "Autonomous dependency reduction engine for Rust"
 license = "MIT"
 repository = "https://github.com/elci-group/amber"
+keywords = ["dependencies", "cargo", "analysis", "security", "cli"]
 rust-version = "1.85"
 
 [lib]
@@ -27,7 +30,7 @@ required-features = ["library"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
-cargo_metadata = { version = "0.18", features = ["builder"] }
+cargo_metadata = "0.18"
 syn = { version = "2.0", features = ["full", "visit"] }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 toml = "0.8"
@@ -36,8 +39,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-semver = "1.0"
-comfy-table = "7.1"
+form3 = { path = "../3form" }
 ureq = { version = "2.10", optional = true, features = ["json"] }
 rustsec = { version = "0.31", default-features = false }
 # Git dependency on the public padagonia repository. Once padagonia is
@@ -52,9 +54,12 @@ online = ["dep:ureq"]
 library = ["dep:padagonia"]
 migrate = ["dep:toml_edit"]
 daemon = ["library"]
+# Behavioral benchmarking is opt-in because it requires Linux `strace`.
+# Its trace classifier is internal, avoiding a network/TUI dependency graph.
+jeenome = []
 
 [dev-dependencies]
-criterion = "0.7.0"
+criterion = { version = "0.7.0", default-features = false, features = ["cargo_bench_support"] }
 
 [profile.release]
 opt-level = 3

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `library` subcommand (requires the `library` feature).
 
 use crate::amber_anyhow::{Context, Result};
@@ -70,7 +72,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, command: &super::LibraryCommands) ->
             println!("{}", path.display());
         }
         super::LibraryCommands::Search { query } => {
-            info!("Searching library for `{query}`");
+            info!(query = %query, "searching replacement library");
             let matches = store.search(query);
             if matches.is_empty() {
                 println!("  No library entries matching `{query}`.");
@@ -91,7 +93,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, command: &super::LibraryCommands) ->
             }
         }
         super::LibraryCommands::Remove { crate_name } => {
-            info!("Removing `{crate_name}` from library");
+            info!(crate = %crate_name, "removing entry from replacement library");
             if store.remove(crate_name)? {
                 println!("  Removed replacement for `{crate_name}` from the library.");
             } else {

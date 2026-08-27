@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Benchmarks for the Padagonia-backed replacement library.
 
 use amber::analysis::repo::RepositoryAnalyzer;

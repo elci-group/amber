@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::amber_anyhow::{Context, Result};
 use std::fmt::Write as _;
 use std::fs;
@@ -95,11 +97,11 @@ impl Validator {
     #[instrument(skip(self, replacement_code), fields(module_name = %module_name))]
     pub fn validate(&self, module_name: &str, replacement_code: &str) -> Result<ValidationReport> {
         Self::validate_module_name(module_name)?;
-        info!("Validating replacement module: {}", module_name);
+        info!(module = %module_name, "validating replacement module");
 
         let temp = TempDir::new().context("failed to create temporary directory")?;
         let project_dir = temp.path();
-        debug!("Validation temp directory: {}", project_dir.display());
+        debug!(path = %project_dir.display(), "created validation temp directory");
 
         Self::write_cargo_toml(project_dir, module_name)?;
         Self::write_module(project_dir, module_name, replacement_code)?;
@@ -125,13 +127,15 @@ impl Validator {
 
         if success {
             info!(
-                "Replacement module {} passed validation in {:?}",
-                module_name, duration
+                module = %module_name,
+                ?duration,
+                "replacement module passed validation"
             );
         } else {
             warn!(
-                "Replacement module {} failed validation in {:?}",
-                module_name, duration
+                module = %module_name,
+                ?duration,
+                "replacement module failed validation"
             );
         }
 
@@ -144,7 +148,7 @@ impl Validator {
     }
 
     fn run_stage(project_dir: &Path, stage: ValidationStage) -> Result<StageResult> {
-        debug!("Running {}", stage.name());
+        debug!(stage = stage.name(), "running validation stage");
         let start = Instant::now();
 
         let (program, args) = match stage {
@@ -169,7 +173,9 @@ impl Validator {
             .is_none()
         {
             if wait_start.elapsed() >= VALIDATION_TIMEOUT {
-                let _ = child.kill();
+                if let Err(error) = child.kill() {
+                    warn!(stage = stage.name(), %error, "failed to kill timed-out validation process");
+                }
                 killed_for_timeout = true;
                 break;
             }
@@ -202,7 +208,10 @@ impl Validator {
                     .to_lowercase()
                     .contains("no such file or directory");
             if not_installed {
-                debug!("rustfmt not installed; skipping format stage");
+                debug!(
+                    stage = stage.name(),
+                    program, "validation program is unavailable; skipping optional stage"
+                );
                 true
             } else {
                 false

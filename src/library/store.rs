@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Persistent library of replacement modules backed by Padagonia.
 
 use padagonia::{KeyId, Node, Provenance, Scalar, Store, StringTableExt};

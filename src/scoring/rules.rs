@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 /// Dependencies that should NEVER be replaced (security critical)
 pub const NEVER_REPLACE: &[&str] = &[
     // Cryptography

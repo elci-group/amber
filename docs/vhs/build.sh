@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+# SPDX-License-Identifier: MIT
 #
 # build.sh — render Amber's README/website demo GIFs.
 #

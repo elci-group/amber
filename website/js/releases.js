@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 (async function () {
   const container = document.getElementById('releases-container');
   const filters = document.querySelectorAll('[data-filter]');

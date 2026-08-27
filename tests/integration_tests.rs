@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use amber::analysis::repo::RepositoryAnalyzer;
 use amber::analysis::usage::UsageAnalyzer;
 use std::path::PathBuf;

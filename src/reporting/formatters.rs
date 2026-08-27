@@ -1,6 +1,8 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::amber_anyhow::Result;
 use crate::reporting::style::Colorize;
-use comfy_table::{
+use form3::table::{
     modifiers::UTF8_ROUND_CORNERS, Attribute, Cell, CellAlignment, ColumnConstraint,
     ContentArrangement, Table, Width,
 };
@@ -220,7 +222,7 @@ impl ConsoleReporter {
             let api_text = match usage.get(&dep.name) {
                 Some(u) if !u.imported_items.is_empty() => u.unique_api_usage.to_string(),
                 Some(u) if !u.call_sites.is_empty() => u.call_sites.len().to_string(),
-                _ => "unused".dimmed(),
+                _ => "unused".dimmed().to_string(),
             };
 
             let rec_short = match score.recommendation {
@@ -352,15 +354,44 @@ impl ConsoleReporter {
         println!("{}", directive.to_markdown());
     }
 
+    /// Print a contextual SWOT review for a replacement candidate.
+    pub fn print_swot(&self, crate_name: &str, swot: &crate::scoring::swot::SwotAnalysis) {
+        println!();
+        println!(
+            "  {} SWOT Review: {}",
+            "◈".bright_yellow(),
+            crate_name.cyan().bold()
+        );
+        println!();
+        Self::print_swot_quadrant("Strengths", &swot.strengths, |s| s.green().to_string());
+        Self::print_swot_quadrant("Weaknesses", &swot.weaknesses, |s| s.yellow().to_string());
+        Self::print_swot_quadrant("Opportunities", &swot.opportunities, |s| {
+            s.bright_green().to_string()
+        });
+        Self::print_swot_quadrant("Threats", &swot.threats, |s| s.red().to_string());
+    }
+
+    fn print_swot_quadrant(title: &str, items: &[String], color: impl Fn(&str) -> String) {
+        println!("  {}", color(title).bold());
+        if items.is_empty() {
+            println!("    {} none identified", "·".dimmed());
+        } else {
+            for item in items {
+                println!("    {} {}", "·".dimmed(), item);
+            }
+        }
+        println!();
+    }
+
     fn score_bar(score: u8) -> String {
         let filled = (score as usize) / 5;
         let empty = 20 - filled;
         let bar = "█".repeat(filled) + &"░".repeat(empty);
         match score {
-            0..=25 => bar.red(),
-            26..=50 => bar.yellow(),
-            51..=75 => bar.bright_green(),
-            _ => bar.green(),
+            0..=25 => bar.red().to_string(),
+            26..=50 => bar.yellow().to_string(),
+            51..=75 => bar.bright_green().to_string(),
+            _ => bar.green().to_string(),
         }
     }
 }
@@ -510,7 +541,7 @@ impl EmojiReporter {
             let api_text = match usage.get(&dep.name) {
                 Some(u) if !u.imported_items.is_empty() => u.unique_api_usage.to_string(),
                 Some(u) if !u.call_sites.is_empty() => u.call_sites.len().to_string(),
-                _ => "unused 💤".dimmed(),
+                _ => "unused 💤".dimmed().to_string(),
             };
 
             let rec_emoji = Self::recommendation_emoji(&score.recommendation);
@@ -1270,6 +1301,7 @@ mod tests {
                 compile_time_reduction: "-2-5%".to_string(),
                 binary_size_reduction: "-30KB-100KB".to_string(),
             },
+            swot: crate::scoring::swot::SwotAnalysis::default(),
         }
     }
 

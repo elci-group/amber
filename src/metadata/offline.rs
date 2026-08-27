@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Offline metadata provider.
 //!
 //! Uses only information already present in Cargo metadata. All scores are

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_env_logger — Minimal replacement for `env_logger`
 //!
 //! Initializes logging based on the `RUST_LOG` environment variable.

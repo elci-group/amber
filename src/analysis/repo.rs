@@ -1,6 +1,7 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::amber_anyhow::{Context, Result};
 use cargo_metadata::{CargoOpt, Metadata, MetadataCommand, Package, PackageId};
-use semver::Version;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use tracing::info;
@@ -36,7 +37,7 @@ impl RepositoryAnalyzer {
         manifest_path: &Path,
         provider: Box<dyn MetadataProvider>,
     ) -> Result<Self> {
-        info!("Loading Cargo metadata from {}", manifest_path.display());
+        info!(manifest = %manifest_path.display(), "loading Cargo metadata");
 
         let mut cmd = MetadataCommand::new();
         cmd.manifest_path(manifest_path)
@@ -46,6 +47,7 @@ impl RepositoryAnalyzer {
             Ok(metadata) => metadata,
             Err(full_error) => {
                 tracing::warn!(
+                    manifest = %manifest_path.display(),
                     %full_error,
                     "full Cargo metadata resolution failed; falling back to manifest-only metadata"
                 );
@@ -116,13 +118,9 @@ impl RepositoryAnalyzer {
                 }
 
                 // Find the resolved package for this dependency
-                let dep_package = all_packages.values().find(|p| {
-                    p.name == original_name
-                        && dep.req.matches(
-                            &Version::parse(&p.version.to_string())
-                                .unwrap_or(Version::new(0, 0, 0)),
-                        )
-                });
+                let dep_package = all_packages
+                    .values()
+                    .find(|p| p.name == original_name && dep.req.matches(&p.version));
 
                 let transitive_deps = if include_transitive {
                     Self::get_transitive_deps(&original_name, resolve, &all_packages)
@@ -139,7 +137,7 @@ impl RepositoryAnalyzer {
         // Sort by name for consistent output
         deps.sort_by(|a, b| a.name.cmp(&b.name));
 
-        info!("Found {} direct dependencies", deps.len());
+        info!(dependency_count = deps.len(), "found direct dependencies");
         Ok(deps)
     }
 
@@ -266,8 +264,9 @@ impl RepositoryAnalyzer {
             }
             Err(e) => {
                 tracing::warn!(
-                    "Failed to fetch metadata for {}: {e}; using defaults",
-                    dependency.name
+                    crate = %dependency.name,
+                    error = %e,
+                    "failed to fetch dependency metadata; using defaults"
                 );
             }
         }

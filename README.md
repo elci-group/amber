@@ -43,6 +43,23 @@ research project.
 - **Optional replacement library** — a Padagonia-backed database of generated
   modules via the `library` feature.
 
+## Recursive transformation planning
+
+The `transformation` library module turns versioned lwoodz evidence and a
+versioned Padagonia software ontology into an auditable `TransformationPlan`.
+It evaluates `PRESERVE`, `VENDOR`, `MIRROR`, `FORK`, `SELECTIVE_FORK`, `ADAPT`,
+`EXTRACT`, `REDESIGN`, `REIMPLEMENT`, `REMOVE`, and `REPLACE`; deterministic
+policy constraints always run before multi-objective scoring. Established
+component boundaries are evaluated recursively and composed into partial plans.
+
+Replacement records separately state what happens to existing code and whether
+the planned result is a behavioural reimplementation, code-derived
+modification, or provenance-uncertain replacement. Plans retain evidence IDs,
+source schema versions, policy versions, downstream lineage, licensing
+requirements, and explicit human-review gates. The `portfolio` module adds a
+cross-dependency pass for supplier concentration, duplicated capabilities, and
+aggregate maintenance and licensing risk.
+
 ## Installation
 
 Requires Rust **1.85** or newer.

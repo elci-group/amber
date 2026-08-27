@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_byteorder — Replacement for the `byteorder` crate
 //!
 //! Use the endianness methods on integer types (stable since Rust 1.32+)

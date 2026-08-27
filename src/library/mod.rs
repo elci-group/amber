@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Padagonia-backed library of generated replacement modules.
 //!
 //! Enabled by the `library` Cargo feature. Stores, retrieves, and forks

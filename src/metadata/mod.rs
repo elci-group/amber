@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Dependency metadata providers.
 //!
 //! By default Amber operates offline and uses conservative estimates.

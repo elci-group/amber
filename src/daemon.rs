@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Lightweight home-directory monitor for Amber-compatible Cargo projects.
 //!
 //! Enabled by the `daemon` feature. The daemon is intentionally conservative:
@@ -256,10 +258,22 @@ fn discover_manifests(root: &Path, max_projects: usize) -> Result<Vec<PathBuf>> 
 }
 
 fn is_amber_compatible(manifest: &Path) -> bool {
-    std::fs::read_to_string(manifest)
-        .ok()
-        .and_then(|content| content.parse::<toml::Value>().ok())
-        .and_then(|value| value.as_table().cloned())
+    let content = match std::fs::read_to_string(manifest) {
+        Ok(content) => content,
+        Err(error) => {
+            debug!(manifest = %manifest.display(), %error, "could not read candidate Cargo manifest");
+            return false;
+        }
+    };
+    let value = match content.parse::<toml::Value>() {
+        Ok(value) => value,
+        Err(error) => {
+            debug!(manifest = %manifest.display(), %error, "candidate Cargo manifest is invalid TOML");
+            return false;
+        }
+    };
+    value
+        .as_table()
         .is_some_and(|table| table.contains_key("package") || table.contains_key("workspace"))
 }
 
@@ -340,11 +354,19 @@ fn source_fingerprint(project_root: &Path) -> Result<String> {
                 queue.push_back(path);
             } else if file_type.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
                 let meta = entry.metadata()?;
-                let modified = meta
-                    .modified()
-                    .ok()
-                    .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
-                    .map_or(0, |duration| duration.as_secs());
+                let modified = match meta.modified() {
+                    Ok(time) => match time.duration_since(UNIX_EPOCH) {
+                        Ok(duration) => duration.as_secs(),
+                        Err(error) => {
+                            debug!(path = %path.display(), %error, "source timestamp predates Unix epoch");
+                            0
+                        }
+                    },
+                    Err(error) => {
+                        debug!(path = %path.display(), %error, "source modification time is unavailable");
+                        0
+                    }
+                };
                 files.push(format!(
                     "{}:{}:{}",
                     path.strip_prefix(project_root)
@@ -600,14 +622,20 @@ impl CacheLock {
             .open(&lock_path)
         {
             Ok(_) => Ok(Self { path: lock_path }),
-            Err(e) if e.kind() == ErrorKind::AlreadyExists => Err(std::io::Error::new(
-                ErrorKind::WouldBlock,
-                format!(
-                    "analysis cache is already locked at {}; another amber daemon may be running",
-                    lock_path.display()
-                ),
-            )),
-            Err(e) => Err(e),
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+                warn!(lock = %lock_path.display(), "analysis cache is already locked");
+                Err(std::io::Error::new(
+                    ErrorKind::WouldBlock,
+                    format!(
+                        "analysis cache is already locked at {}; another amber daemon may be running",
+                        lock_path.display()
+                    ),
+                ))
+            }
+            Err(e) => {
+                warn!(lock = %lock_path.display(), error = %e, "failed to acquire analysis cache lock");
+                Err(e)
+            }
         }
     }
 }

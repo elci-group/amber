@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_color — Minimal replacement for terminal coloring crates
 //!
 //! Supports basic ANSI color codes without external dependencies.

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_thiserror — Lightweight replacement for `thiserror`
 //!
 /// Derive macro replacement - manually implement Error for enums/structs

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use anyhow::Context;
 use clap::Parser;
 use serde::{Deserialize, Serialize};

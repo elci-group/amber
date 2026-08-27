@@ -1,3 +1,5 @@
+# Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+# SPDX-License-Identifier: MIT
 [package]
 name = "sample-app"
 version = "0.1.0"

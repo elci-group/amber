@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use tracing::{debug, info};
 
 use super::rules::{
@@ -132,7 +134,7 @@ impl SafetyClassifier {
 
     /// Score a single dependency for replaceability
     pub fn score_dependency(&self, dep: &Dependency, usage: &CrateUsage) -> ReplacementScore {
-        debug!("Scoring dependency: {}", dep.name);
+        debug!(crate = %dep.name, "scoring dependency");
 
         let mut reasoning = Vec::new();
         let mut dimensions = ScoreDimensions::default();
@@ -217,8 +219,10 @@ impl SafetyClassifier {
         reasoning.push(format!("Category rule applied: {rule_applied}"));
 
         info!(
-            "Scored {}: overall={}, class={:?}",
-            dep.name, overall, classification
+            crate = %dep.name,
+            overall,
+            class = ?classification,
+            "dependency scored"
         );
 
         reasoning.push(format!(

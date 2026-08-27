@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_cfg_if — Replacement for the `cfg-if` crate
 //!
 /// Simplifies conditional compilation. Use native `cfg!` or `#[cfg]` instead.

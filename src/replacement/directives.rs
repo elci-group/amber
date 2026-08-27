@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::amber_anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -5,6 +7,7 @@ use std::path::PathBuf;
 use crate::analysis::types::{CrateUsage, Dependency};
 use crate::replacement::generator::Generator;
 use crate::scoring::classifier::{ReplacementRecommendation, ReplacementScore};
+use crate::scoring::swot::SwotAnalysis;
 
 /// Estimated impact of replacing a dependency.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,6 +64,9 @@ pub struct TechnicalDirective {
     pub risk_notes: Vec<String>,
     /// Estimated compile-time and binary-size impact.
     pub estimated_impact: EstimatedImpact,
+    /// Contextual Strengths/Weaknesses/Opportunities/Threats review of this
+    /// specific replacement candidate, for the human reviewing the directive.
+    pub swot: SwotAnalysis,
 }
 
 /// Context used when generating a [`TechnicalDirective`].
@@ -96,6 +102,7 @@ impl DirectiveGenerator {
         let rollback_plan = Self::build_rollback_plan(dep, usage);
         let rationale = Self::build_rationale(score, usage);
         let scope_summary = Self::build_scope_summary(dep, usage, score);
+        let swot = crate::scoring::swot::analyze(dep, usage, score, None);
 
         TechnicalDirective {
             project_name: context.project_name.clone(),
@@ -121,6 +128,7 @@ impl DirectiveGenerator {
                 compile_time_reduction: Generator::estimate_compile_reduction(&dep.name),
                 binary_size_reduction: Generator::estimate_binary_reduction(&dep.name),
             },
+            swot,
         }
     }
 
@@ -478,6 +486,9 @@ impl TechnicalDirective {
             );
             lines.push(String::new());
         }
+
+        lines.push(self.swot.to_markdown());
+        lines.push(String::new());
 
         lines.push("## Rationale".to_string());
         lines.push(String::new());

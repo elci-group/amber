@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_chrono — Replacement for the `chrono` crate
 //!
 //! For many use-cases `std::time::SystemTime` and `std::time::Duration`

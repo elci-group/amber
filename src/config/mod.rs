@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Configuration and policy enforcement.
 //!
 //! Amber can read a `.amber.toml` file from the target project directory to
@@ -90,6 +92,7 @@ impl Weights {
             || !self.testability.is_finite()
             || !self.api_surface.is_finite()
         {
+            // traci: allow -- pure validation returns diagnostics to its caller.
             return Err("weights must be finite numbers".to_string());
         }
 
@@ -100,6 +103,7 @@ impl Weights {
             || self.testability < 0.0
             || self.api_surface < 0.0
         {
+            // traci: allow -- pure validation returns diagnostics to its caller.
             return Err("weights must be non-negative".to_string());
         }
 
@@ -111,6 +115,7 @@ impl Weights {
             + self.api_surface;
 
         if (total - 1.0).abs() > 1e-6 {
+            // traci: allow -- pure validation returns diagnostics to its caller.
             return Err(format!("weights must sum to 1.0, got {total}"));
         }
 
@@ -127,6 +132,7 @@ impl Config {
     pub fn validate(&self) -> Result<(), String> {
         if let Some(threshold) = self.threshold {
             if threshold > 100 {
+                // traci: allow -- pure validation returns diagnostics to its caller.
                 return Err(format!(
                     "threshold must be between 0 and 100, got {threshold}"
                 ));

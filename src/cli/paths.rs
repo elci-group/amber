@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Validation of user-supplied output paths.
 //!
 //! The `replace`, `directives`, and `analyze` commands write generated files

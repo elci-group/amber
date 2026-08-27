@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_maplit — Replacement for the `maplit` crate
 //!
 /// Use these macros for literal collection initialization.

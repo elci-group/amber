@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Online metadata provider backed by the crates.io API.
 //!
 //! Requires the `online` Cargo feature.
@@ -61,7 +63,7 @@ impl CratesIoProvider {
 
     fn fetch_crate(&self, name: &str) -> crate::amber_anyhow::Result<CrateResponse> {
         let url = format!("{}/{name}", self.base_url);
-        debug!("Fetching crates.io metadata for {}", name);
+        debug!(crate = %name, url = %url, "fetching crates.io metadata");
 
         let body = self
             .client

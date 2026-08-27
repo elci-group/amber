@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use serde::{Deserialize, Serialize};
 
 /// Represents a single dependency with full metadata

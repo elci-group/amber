@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! `RustSec` advisory database integration.
 //!
 //! Loads (or updates) the `RustSec` advisory database from a local cache
@@ -85,11 +87,15 @@ fn resolve_cache_dir(
 }
 
 fn default_cache_dir() -> PathBuf {
+    let xdg_cache_home = std::env::var("XDG_CACHE_HOME").unwrap_or_default();
+    let home = std::env::var("HOME").unwrap_or_default();
+    let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_default();
+    let user_profile = std::env::var("USERPROFILE").unwrap_or_default();
     resolve_cache_dir(
-        std::env::var("XDG_CACHE_HOME").ok().as_deref(),
-        std::env::var("HOME").ok().as_deref(),
-        std::env::var("LOCALAPPDATA").ok().as_deref(),
-        std::env::var("USERPROFILE").ok().as_deref(),
+        Some(&xdg_cache_home),
+        Some(&home),
+        Some(&local_app_data),
+        Some(&user_profile),
     )
     .unwrap_or_else(|| PathBuf::from(FALLBACK_CACHE_DIR))
 }
@@ -145,13 +151,13 @@ impl RustSecSource {
         self.db
             .get_or_init(|| {
                 if let Err(e) = self.ensure_database() {
-                    warn!("RustSec advisory database unavailable: {e}");
+                    warn!(cache = %self.cache_dir.display(), error = %e, "RustSec advisory database unavailable");
                     return None;
                 }
                 match Database::open(&self.cache_dir) {
                     Ok(db) => Some(db),
                     Err(e) => {
-                        warn!("Failed to open RustSec database: {e}");
+                        warn!(cache = %self.cache_dir.display(), error = %e, "failed to open RustSec advisory database");
                         None
                     }
                 }
@@ -171,8 +177,9 @@ impl RustSecSource {
         let crates_dir = self.cache_dir.join("crates");
         if crates_dir.is_dir() {
             debug!(
-                "Updating RustSec advisory database in {}",
-                self.cache_dir.display()
+                cache = %self.cache_dir.display(),
+                operation = "update",
+                "synchronizing RustSec advisory database"
             );
             // Fetch the latest shallow commit and reset to it. This is more
             // reliable than `git pull --ff-only --depth 1` when the remote
@@ -181,8 +188,9 @@ impl RustSecSource {
             (self.git_runner)(&self.cache_dir, &["reset", "--hard", "FETCH_HEAD"])
         } else {
             debug!(
-                "Cloning RustSec advisory database to {}",
-                self.cache_dir.display()
+                cache = %self.cache_dir.display(),
+                operation = "clone",
+                "synchronizing RustSec advisory database"
             );
             std::fs::create_dir_all(&self.cache_dir)?;
             let parent = self.cache_dir.parent().unwrap_or(&self.cache_dir);
@@ -210,6 +218,7 @@ impl RustSecSource {
             Ok(())
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            warn!(cwd = %cwd.display(), ?args, stderr = %stderr, "git command failed while updating RustSec data");
             Err(RustSecError::Git(format!("git exited with {stderr}")))
         }
     }

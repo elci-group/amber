@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use crate::analysis::types::CrateUsage;
 
 /// Result of attempting to generate a replacement for a crate.

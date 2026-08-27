@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_tracing_subscriber — Minimal, dependency-free subscriber shim.
 //!
 //! Mirrors the small slice of the `tracing-subscriber` API that most setup code

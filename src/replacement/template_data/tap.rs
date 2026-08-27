@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_tap — Replacement for the `tap` crate
 //!
 //! Provides tap methods for piping values through closures.

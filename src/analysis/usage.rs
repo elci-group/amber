@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 use super::walker::WalkDir;
 use crate::amber_anyhow::{Context, Result};
 use proc_macro2::Span;
@@ -43,7 +45,7 @@ impl UsageAnalyzer {
     ///
     /// Returns an error if source files cannot be scanned.
     pub fn analyze_all_usage(&self, deps: &[Dependency]) -> Result<HashMap<String, CrateUsage>> {
-        info!("Scanning source files for dependency usage...");
+        info!(root = %self.manifest_dir.display(), "scanning source files for dependency usage");
 
         let mut all_usage: HashMap<String, CrateUsage> = HashMap::new();
 
@@ -59,11 +61,14 @@ impl UsageAnalyzer {
         }
 
         // Walk all Rust source files
-        let rust_files = self.find_rust_files();
-        info!("Found {} Rust source files to analyze", rust_files.len());
+        let rust_files = self.find_rust_files()?;
+        info!(
+            file_count = rust_files.len(),
+            "found Rust source files to analyze"
+        );
 
         for file_path in &rust_files {
-            trace!("Analyzing {}", file_path.display());
+            trace!(path = %file_path.display(), "analyzing source file");
             if let Ok(content) = fs::read_to_string(file_path) {
                 let relative_path = file_path
                     .strip_prefix(&self.manifest_dir)
@@ -134,9 +139,9 @@ impl UsageAnalyzer {
             .filter(|u| !u.imported_items.is_empty() || !u.call_sites.is_empty())
             .count();
         info!(
-            "Usage analysis complete: {} of {} dependencies have active usage",
-            used_count,
-            deps.len()
+            used_dependency_count = used_count,
+            dependency_count = deps.len(),
+            "usage analysis complete"
         );
 
         Ok(all_usage)
@@ -171,13 +176,25 @@ impl UsageAnalyzer {
         Ok(all_usage.remove(crate_name).unwrap_or_default())
     }
 
-    fn find_rust_files(&self) -> Vec<PathBuf> {
+    fn find_rust_files(&self) -> Result<Vec<PathBuf>> {
         WalkDir::new(&self.manifest_dir)
             .into_iter()
-            .filter_map(std::result::Result::ok)
-            .map(|entry| entry.path().to_path_buf())
-            .filter(|path| path.extension().is_some_and(|extension| extension == "rs"))
-            .filter(|path| !has_ignored_component(path, &self.manifest_dir))
+            .filter_map(|entry| match entry {
+                Ok(entry) => {
+                    let path = entry.path().to_path_buf();
+                    (path.extension().is_some_and(|extension| extension == "rs")
+                        && !has_ignored_component(&path, &self.manifest_dir))
+                    .then_some(Ok(path))
+                }
+                Err(error) => {
+                    tracing::warn!(
+                        root = %self.manifest_dir.display(),
+                        %error,
+                        "source-tree traversal failed"
+                    );
+                    Some(Err(error.into()))
+                }
+            })
             .collect()
     }
 
@@ -1197,7 +1214,7 @@ mod tests {
         }
 
         let analyzer = UsageAnalyzer::new(&manifest_path).unwrap();
-        let files = analyzer.find_rust_files();
+        let files = analyzer.find_rust_files().unwrap();
         assert_eq!(files.len(), 4);
     }
 
@@ -1214,7 +1231,7 @@ mod tests {
         fs::write(target_src.join("ignored.rs"), "pub fn ignored() {}\n").unwrap();
 
         let analyzer = UsageAnalyzer::new(&manifest_path).unwrap();
-        let files = analyzer.find_rust_files();
+        let files = analyzer.find_rust_files().unwrap();
         assert_eq!(files, vec![member_src.join("lib.rs")]);
     }
 

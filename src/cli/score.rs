@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `score` subcommand.
 use crate::amber_anyhow::Result;
 
@@ -13,7 +15,7 @@ use tracing::info;
 ///
 /// Returns an error if the dependency cannot be found or usage analysis fails.
 pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str) -> Result<i32> {
-    info!("Scoring dependency: {crate_name}");
+    info!(crate = %crate_name, manifest = %manifest_path.display(), "scoring dependency");
     let config = load_config(cli, manifest_path)?;
     let analyzer = build_analyzer(manifest_path, cli)?;
     let dep = analyzer.get_dependency(crate_name)?;

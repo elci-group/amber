@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `migrate` subcommand (requires the `migrate` Cargo feature).
 //!
 //! Applies a validated replacement module to the target project in one shot:
@@ -47,7 +49,6 @@ use crate::amber_anyhow::{Context, Result};
 use crate::analysis::walker::WalkDir;
 use crate::replacement::validator::{summarize_stderr, Validator};
 use crate::reporting::style::Colorize;
-use std::fmt::Write as _;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -112,7 +113,7 @@ pub fn run(
     replace_with: &Path,
     dry_run: bool,
 ) -> Result<i32> {
-    info!("Migrating crate '{crate_name}' to replacement module");
+    info!(crate = %crate_name, manifest = %manifest_path.display(), "migrating dependency to replacement module");
     let plan = plan_migration(manifest_path, crate_name, replace_with)?;
 
     if dry_run {
@@ -135,6 +136,7 @@ pub fn run(
     });
 
     if let Err(error) = apply_migration(&plan) {
+        warn!(crate = %crate_name, %error, "migration write failed; restoring snapshots");
         restore_snapshots(&snapshots);
         return Err(error);
     }
@@ -146,6 +148,7 @@ pub fn run(
             crate::bail!("cargo check failed; migration was rolled back\n{stderr}");
         }
         Err(error) => {
+            warn!(crate = %crate_name, %error, "cargo check could not run; restoring snapshots");
             restore_snapshots(&snapshots);
             crate::bail!("failed to run cargo check; migration was rolled back: {error}");
         }
@@ -398,7 +401,9 @@ fn ensure_mod_decl(content: &str, module_name: &str) -> Option<String> {
     if !output.ends_with('\n') {
         output.push('\n');
     }
-    let _ = writeln!(output, "mod {module_name};");
+    output.push_str("mod ");
+    output.push_str(module_name);
+    output.push_str(";\n");
     Some(output)
 }
 
@@ -409,6 +414,7 @@ fn snapshot_file(path: &Path) -> Result<FileSnapshot> {
         Ok(bytes) => Some(bytes),
         Err(error) if error.kind() == io::ErrorKind::NotFound => None,
         Err(error) => {
+            warn!(path = %path.display(), %error, "failed to snapshot migration file");
             return Err(error).with_context(|| format!("failed to snapshot {}", path.display()));
         }
     };
@@ -428,8 +434,9 @@ fn restore_snapshots(snapshots: &[FileSnapshot]) {
         );
         if let Err(error) = result {
             warn!(
-                "rollback: failed to restore {}: {error}",
-                snapshot.path.display()
+                path = %snapshot.path.display(),
+                %error,
+                "rollback failed to restore snapshot"
             );
         }
     }
@@ -476,7 +483,9 @@ fn run_cargo_check(project_dir: &Path) -> Result<(bool, String)> {
         .is_none()
     {
         if start.elapsed() >= CARGO_CHECK_TIMEOUT {
-            let _ = child.kill();
+            if let Err(error) = child.kill() {
+                warn!(project = %project_dir.display(), %error, "failed to kill timed-out cargo check");
+            }
             timed_out = true;
             break;
         }
@@ -484,7 +493,9 @@ fn run_cargo_check(project_dir: &Path) -> Result<(bool, String)> {
     }
 
     if timed_out {
-        let _ = child.wait();
+        if let Err(error) = child.wait() {
+            warn!(project = %project_dir.display(), %error, "failed to reap timed-out cargo check");
+        }
         return Ok((
             false,
             format!("cargo check timed out after {CARGO_CHECK_TIMEOUT:?}"),

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 (function () {
   const modal = document.getElementById('subscribe-modal');
   const modalTitle = document.getElementById('modal-title');

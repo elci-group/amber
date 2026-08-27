@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Integration tests for the `amber migrate` subcommand.
 //!
 //! The whole file is compiled only when the `migrate` Cargo feature is

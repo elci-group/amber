@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_log — Minimal replacement for the `log` crate
 //!
 //! Provides basic logging macros without the crate dependency.

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_lazy_static — Replacement for the `lazy_static` crate
 //! 
 //! Usage: Use `std::sync::OnceLock` (Rust 1.70+) or `std::sync::LazyLock` (Rust 1.80+)

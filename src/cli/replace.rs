@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `replace` subcommand.
 use crate::amber_anyhow::Result;
 
@@ -18,7 +20,7 @@ use tracing::{info, warn};
 /// Returns an error if `out_dir` escapes the target project root, the
 /// dependency cannot be analyzed, or the replacement cannot be generated.
 pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str, out_dir: &Path) -> Result<i32> {
-    info!("Generating replacement for: {crate_name}");
+    info!(crate = %crate_name, output_dir = %out_dir.display(), "generating replacement");
     let out_dir = validate_output_path(&cli.path, out_dir)?;
     Generator::validate_crate_name(crate_name)?;
     let config = load_config(cli, manifest_path)?;
@@ -33,8 +35,10 @@ pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str, out_dir: &Path) ->
 
     if score.overall < threshold {
         warn!(
-            "Score ({}) below threshold ({}). Use --threshold to override.",
-            score.overall, threshold
+            crate = %crate_name,
+            score = score.overall,
+            threshold,
+            "replacement score is below threshold; use --threshold to override"
         );
         return Ok(0);
     }
@@ -56,5 +60,9 @@ pub fn run(cli: &Cli, manifest_path: &Path, crate_name: &str, out_dir: &Path) ->
     let proposal = generator.generate_replacement(crate_name, &usage_stats, &score)?;
     let reporter = ConsoleReporter::new();
     reporter.print_replacement_proposal(&proposal);
+    if cli.swot {
+        let swot = crate::scoring::swot::analyze(&dep, &usage_stats, &score, Some(&proposal));
+        reporter.print_swot(crate_name, &swot);
+    }
     Ok(0)
 }

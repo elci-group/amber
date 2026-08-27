@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The default `analyze` command and full-repository analysis flow.
 use crate::amber_anyhow::Result;
 
@@ -12,7 +14,7 @@ use crate::reporting::style::Colorize;
 use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
-use tracing::{info, info_span, warn};
+use tracing::{debug, info, info_span, warn};
 
 /// Run a full analysis and emit the requested report.
 ///
@@ -42,7 +44,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
 
     // Phase 1: Repository Analysis
     let _phase = info_span!("phase", phase = "index").entered();
-    info!("Phase 1: Indexing repository dependencies...");
+    info!(phase = "index", manifest = %manifest_path.display(), "indexing repository dependencies");
     let analyzer = build_analyzer(manifest_path, cli)?;
     let deps = analyzer.list_dependencies(cli.transitive, !cli.no_dev)?;
 
@@ -62,7 +64,11 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
 
     // Phase 2: Usage Analysis
     let _phase = info_span!("phase", phase = "usage").entered();
-    info!("Phase 2: Analyzing contextual usage...");
+    info!(
+        phase = "usage",
+        dependency_count = deps.len(),
+        "analyzing contextual usage"
+    );
     let usage_analyzer = UsageAnalyzer::new(manifest_path)?;
     let usage_stats = usage_analyzer.analyze_all_usage(&deps)?;
     diag!(
@@ -73,7 +79,11 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
 
     // Phase 3: Safety Classification
     let _phase = info_span!("phase", phase = "classify").entered();
-    info!("Phase 3: Classifying replacement safety...");
+    info!(
+        phase = "classify",
+        dependency_count = deps.len(),
+        "classifying replacement safety"
+    );
     let classifier = build_classifier(&config);
     let scores: Vec<_> = deps
         .iter()
@@ -86,7 +96,7 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
 
     // Phase 4: Generate report
     let _phase = info_span!("phase", phase = "report").entered();
-    info!("Phase 4: Generating report...");
+    info!(phase = "report", format = ?cli.output_format(), "generating report");
     match cli.output_format() {
         OutputFormat::Console => {
             let reporter = ConsoleReporter::new();
@@ -139,7 +149,10 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
     // Phase 5: Replacement proposals (if requested)
     if cli.propose {
         let _phase = info_span!("phase", phase = "proposals").entered();
-        info!("Phase 5: Generating replacement proposals...");
+        info!(
+            phase = "proposals",
+            threshold, "generating replacement proposals"
+        );
         let generator = Generator::new(PathBuf::from("amber_proposals"));
         #[cfg(feature = "library")]
         let mut library_store = if use_library(cli, &config) {
@@ -172,14 +185,18 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             let result = generator.generate_replacement(&dep.name, &usage, score);
 
             match result {
-                Ok(_) => {
+                Ok(ref proposal) => {
                     generated += 1;
-                    info!("Replacement proposal generated for {}", dep.name);
+                    info!(crate = %dep.name, output_dir = %generator.output_dir().display(), "replacement proposal generated");
+                    if cli.swot && matches!(cli.output_format(), OutputFormat::Console) {
+                        let swot =
+                            crate::scoring::swot::analyze(dep, &usage, score, Some(proposal));
+                        ConsoleReporter::new().print_swot(&dep.name, &swot);
+                    }
                 }
                 Err(ref e) if e.to_string().starts_with("unsupported crate") => {
                     skipped_unsupported += 1;
-                    // The generator already emits a structured warning for
-                    // unsupported crates; avoid logging twice.
+                    debug!(crate = %dep.name, error = %e, "replacement template is unavailable");
                 }
                 Err(e) => {
                     validation_failed += 1;

@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_ureq — Minimal, dependency-free blocking HTTP client.
 //!
 //! Implements the small slice of `ureq` used by simple tools: GET/POST with

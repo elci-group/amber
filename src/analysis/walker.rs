@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Internal recursive directory walker.
 //!
 //! Std-only replacement for the `walkdir` crate. Yields every file and
@@ -60,6 +62,7 @@ impl Iterator for IntoIter {
 
             let metadata = match symlink_metadata(&path) {
                 Ok(m) => m,
+                // traci: allow -- iterator consumers receive and contextualize this I/O error.
                 Err(e) => return Some(Err(e)),
             };
 
@@ -69,10 +72,12 @@ impl Iterator for IntoIter {
                         for entry in entries {
                             match entry {
                                 Ok(e) => self.stack.push(e.path()),
+                                // traci: allow -- preserve the directory-entry error for the caller.
                                 Err(e) => return Some(Err(e)),
                             }
                         }
                     }
+                    // traci: allow -- preserve the read-dir error for the caller.
                     Err(e) => return Some(Err(e)),
                 }
                 continue;

@@ -1,3 +1,5 @@
+# Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+# SPDX-License-Identifier: MIT
 [package]
 name = "amber-fuzz"
 version = "0.0.0"

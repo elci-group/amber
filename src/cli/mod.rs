@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! Amber CLI.
 //!
 //! This module contains the command-line interface for Amber. The binary in
@@ -9,6 +11,8 @@ pub mod analyze;
 #[cfg(feature = "daemon")]
 pub mod daemon;
 pub mod directives;
+#[cfg(feature = "jeenome")]
+pub mod jeenome;
 #[cfg(feature = "library")]
 pub mod library;
 pub mod list;
@@ -114,6 +118,20 @@ that meets --threshold. Proposals are written as `amber_<crate>_redux` files \
 and checked with `cargo check` before they are reported."
     )]
     pub propose: bool,
+
+    /// Print a contextual SWOT (Strengths/Weaknesses/Opportunities/Threats)
+    /// review alongside generated replacement proposals
+    #[arg(
+        long,
+        long_help = "\
+After generating a replacement proposal, print a Strengths/Weaknesses/ \
+Opportunities/Threats review derived from the same evidence used for \
+scoring (usage stats, category rules, and — once generated — the \
+proposal's own validation result). Applies to `--propose`, `replace`, and \
+`directives` (directives always include the SWOT section in their \
+Markdown/JSON body regardless of this flag)."
+    )]
+    pub swot: bool,
 
     /// Exclude dev-dependencies from analysis
     #[arg(long)]
@@ -290,6 +308,28 @@ changes. Analysis snapshots are stored in a Padagonia-backed cache.")]
         #[arg(long, default_value_t = 90)]
         cache_max_age_days: u64,
     },
+    /// Benchmark a dependency replacement using behavioral analysis.
+    #[cfg(feature = "jeenome")]
+    #[command(long_about = "\
+Compare the runtime behavior of a project before and after replacing a dependency. \
+Uses strace to capture system calls and jeenome to analyze behavioral patterns, \
+providing confidence scores for behavioral equivalence.")]
+    Benchmark {
+        /// Crate to benchmark replacement for
+        crate_name: String,
+        /// Output directory for generated replacement and traces
+        #[arg(short, long, default_value = "amber_bench")]
+        out_dir: PathBuf,
+        /// Cargo command to benchmark (e.g., 'build', 'test', 'run --bin main')
+        #[arg(long, default_value = "build")]
+        cargo_cmd: String,
+        /// Skip baseline capture (use existing trace if available)
+        #[arg(long)]
+        skip_baseline: bool,
+        /// Skip replacement capture (use existing trace if available)
+        #[arg(long)]
+        skip_replacement: bool,
+    },
 }
 
 #[cfg(feature = "library")]
@@ -446,12 +486,28 @@ pub fn run(cli: &Cli, manifest_path: &Path) -> Result<i32> {
                 cache_max_age_days: *cache_max_age_days,
             },
         ),
+        #[cfg(feature = "jeenome")]
+        Some(Commands::Benchmark {
+            crate_name,
+            out_dir,
+            cargo_cmd,
+            skip_baseline,
+            skip_replacement,
+        }) => jeenome::run(
+            cli,
+            manifest_path,
+            crate_name,
+            out_dir,
+            cargo_cmd,
+            *skip_baseline,
+            *skip_replacement,
+        ),
         Some(Commands::Analyze { output }) => {
-            info!("Starting full repository analysis...");
+            info!(manifest = %manifest_path.display(), output = ?output, "starting full repository analysis");
             analyze::run(cli, manifest_path, output.as_deref())
         }
         None => {
-            info!("Starting full repository analysis...");
+            info!(manifest = %manifest_path.display(), "starting full repository analysis");
             analyze::run(cli, manifest_path, None)
         }
     }
@@ -527,7 +583,7 @@ pub fn build_analyzer(manifest_path: &Path, cli: &Cli) -> Result<RepositoryAnaly
     if use_online(cli) {
         #[cfg(feature = "online")]
         {
-            info!("Using online metadata provider (crates.io)");
+            info!(provider = "crates.io", manifest = %manifest_path.display(), "using online metadata provider");
             return RepositoryAnalyzer::with_provider(
                 manifest_path,
                 Box::new(RustSecEnricher::new(CratesIoProvider::new())),
@@ -539,7 +595,7 @@ pub fn build_analyzer(manifest_path: &Path, cli: &Cli) -> Result<RepositoryAnaly
         }
     }
 
-    info!("Using offline metadata provider with RustSec enrichment");
+    info!(provider = "offline+rustsec", manifest = %manifest_path.display(), "using metadata provider");
     RepositoryAnalyzer::with_provider(
         manifest_path,
         Box::new(RustSecEnricher::new(OfflineProvider::new())),

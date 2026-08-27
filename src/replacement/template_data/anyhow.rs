@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_anyhow — Minimal replacement for `anyhow`
 //!
 //! Provides basic error chaining without the proc-macro overhead.

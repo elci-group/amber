@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! The `directives` subcommand.
 use crate::amber_anyhow::Result;
 
@@ -21,7 +23,7 @@ pub fn run(
     crate_name: &str,
     output: Option<&Path>,
 ) -> Result<i32> {
-    info!("Generating technical directive for: {crate_name}");
+    info!(crate = %crate_name, manifest = %manifest_path.display(), "generating technical directive");
     let config = load_config(cli, manifest_path)?;
     let analyzer = build_analyzer(manifest_path, cli)?;
     let dep = analyzer.get_dependency(crate_name)?;

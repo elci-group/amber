@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_regex — Replacement for the `regex` crate
 //!
 //! For simple patterns, prefer `str::split`, `str::contains`, or a hand-rolled

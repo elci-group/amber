@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_once_cell — Replacement for the `once_cell` crate
 //!
 //! Use `std::sync::OnceLock` and `std::sync::LazyLock` instead.

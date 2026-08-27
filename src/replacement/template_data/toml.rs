@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_toml — Minimal, dependency-free TOML subset parser/serializer.
 //!
 //! Supports the subset used by typical configuration files: tables, dotted

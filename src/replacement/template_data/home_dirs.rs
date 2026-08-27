@@ -1,3 +1,5 @@
+// Copyright (c) 2024 SVCH <svch@seriousaboutsolutions.co.uk>
+// SPDX-License-Identifier: MIT
 //! amber_home — Replacement for `home` and `dirs` crates
 //!
 //! Provides home directory detection without dependencies.

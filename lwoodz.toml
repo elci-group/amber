@@ -1,0 +1,60 @@
+[project]
+license = "MIT"
+copyright_holder = "SVCH <svch@seriousaboutsolutions.co.uk>"
+copyright_year = 2024
+project_name = "amber"
+project_url = "https://github.com/elci-group/amber"
+
+[operation]
+mode = "observe"
+
+[watch]
+path = "."
+recursive = true
+ignore_file = ".lwoodignore"
+
+[generate]
+license_file = "LICENSE"
+notice_file = "NOTICE"
+copyright_file = "COPYRIGHT"
+attribution_file = "THIRD_PARTY_NOTICES"
+overwrite = true
+
+[headers]
+enabled = true
+insert_spdx = true
+exclude = [
+    "target/**",
+    "node_modules/**",
+    "dist/**",
+    ".git/**",
+    ".lwoodz/**",
+    "vendor/**",
+    "website/data/releases/**",
+    "tests/fixtures/**",
+    "fuzz/corpus/**",
+]
+
+[compatibility]
+enforce = true
+policy = "permissive"
+
+[daemon]
+startup_guard = false
+shutdown_grace_secs = 10
+
+[inference]
+enabled = false
+provider = "groq"
+model = "auto"
+groq_model = "llama-3.3-70b-versatile"
+
+[spdx]
+produce_manifest = true
+manifest_path = ".lwoodz/manifest.json"
+include_transitive = false
+
+[audit]
+enabled = true
+log_path = ".lwoodz/audit.jsonl"
+fail_on_incompatible = true
