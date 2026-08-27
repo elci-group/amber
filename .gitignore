@@ -1,4 +1,5 @@
 /target
+.kaptaind/
 
 # Amber tool output (analysis cache and generated proposals). Keeping these out
 # of version control prevents accidental commits of host-specific analysis state.
@@ -18,4 +19,3 @@ docs/vhs/fixture/target/
 # Fuzz testing artefacts.
 /fuzz/target
 /fuzz/artifacts
-
