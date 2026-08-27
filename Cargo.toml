@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 [package]
 name = "amber"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = ["SVCH <svch@seriousaboutsolutions.co.uk>"]
 description = "Autonomous dependency reduction engine for Rust"
