@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 use super::walker::WalkDir;
 use crate::amber_anyhow::{Context, Result};
+use bound_core::Snapshot;
 use proc_macro2::Span;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -22,6 +23,7 @@ use super::types::{
 /// Analyzes how dependencies are actually used in source code
 pub struct UsageAnalyzer {
     manifest_dir: PathBuf,
+    snapshot: Option<Snapshot>,
 }
 
 impl UsageAnalyzer {
@@ -36,7 +38,35 @@ impl UsageAnalyzer {
             .context("Invalid manifest path")?
             .to_path_buf();
 
-        Ok(Self { manifest_dir })
+        Ok(Self {
+            manifest_dir,
+            snapshot: None,
+        })
+    }
+
+    /// Create a usage analyzer backed by a bound snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `manifest_path` has no parent directory or the
+    /// snapshot cannot be loaded.
+    pub fn with_snapshot(manifest_path: &Path, snapshot_path: &Path) -> Result<Self> {
+        let manifest_dir = manifest_path
+            .parent()
+            .context("Invalid manifest path")?
+            .to_path_buf();
+
+        let snapshot_json = fs::read_to_string(snapshot_path).with_context(|| {
+            format!("Failed to read bound snapshot {}", snapshot_path.display())
+        })?;
+        let snapshot: Snapshot = serde_json::from_str(&snapshot_json).with_context(|| {
+            format!("Failed to parse bound snapshot {}", snapshot_path.display())
+        })?;
+
+        Ok(Self {
+            manifest_dir,
+            snapshot: Some(snapshot),
+        })
     }
 
     /// Analyze usage for all dependencies.
@@ -60,24 +90,17 @@ impl UsageAnalyzer {
             );
         }
 
-        // Walk all Rust source files
+        // Collect Rust source files and content, either from a bound snapshot
+        // or by walking the filesystem.
         let rust_files = self.find_rust_files()?;
         info!(
             file_count = rust_files.len(),
             "found Rust source files to analyze"
         );
 
-        for file_path in &rust_files {
+        for (file_path, content, relative_path) in rust_files {
             trace!(path = %file_path.display(), "analyzing source file");
-            if let Ok(content) = fs::read_to_string(file_path) {
-                let relative_path = file_path
-                    .strip_prefix(&self.manifest_dir)
-                    .unwrap_or(file_path)
-                    .to_string_lossy()
-                    .to_string();
-
-                Self::analyze_file_usage(&content, deps, &mut all_usage, &relative_path);
-            }
+            Self::analyze_file_usage(&content, deps, &mut all_usage, &relative_path);
         }
 
         let dep_api_counts: HashMap<String, usize> = deps
@@ -176,15 +199,44 @@ impl UsageAnalyzer {
         Ok(all_usage.remove(crate_name).unwrap_or_default())
     }
 
-    fn find_rust_files(&self) -> Result<Vec<PathBuf>> {
+    fn find_rust_files(&self) -> Result<Vec<(PathBuf, String, String)>> {
+        if let Some(snapshot) = &self.snapshot {
+            let mut files: Vec<(PathBuf, String, String)> = snapshot
+                .files
+                .iter()
+                .filter(|entry| entry.language.as_deref() == Some("rs"))
+                .filter(|entry| {
+                    !has_ignored_component(Path::new(&entry.relative_path), &self.manifest_dir)
+                })
+                .filter_map(|entry| {
+                    let content = entry.content.as_ref()?;
+                    let path = self.manifest_dir.join(&entry.relative_path);
+                    Some((path, content.clone(), entry.relative_path.clone()))
+                })
+                .collect();
+            files.sort_by(|a, b| a.2.cmp(&b.2));
+            return Ok(files);
+        }
+
         WalkDir::new(&self.manifest_dir)
             .into_iter()
             .filter_map(|entry| match entry {
                 Ok(entry) => {
                     let path = entry.path().to_path_buf();
-                    (path.extension().is_some_and(|extension| extension == "rs")
-                        && !has_ignored_component(&path, &self.manifest_dir))
-                    .then_some(Ok(path))
+                    if path.extension().is_some_and(|extension| extension == "rs")
+                        && !has_ignored_component(&path, &self.manifest_dir)
+                    {
+                        fs::read_to_string(&path).ok().map(|content| {
+                            let relative_path = path
+                                .strip_prefix(&self.manifest_dir)
+                                .unwrap_or(&path)
+                                .to_string_lossy()
+                                .to_string();
+                            Ok((path, content, relative_path))
+                        })
+                    } else {
+                        None
+                    }
                 }
                 Err(error) => {
                     tracing::warn!(
@@ -1232,7 +1284,8 @@ mod tests {
 
         let analyzer = UsageAnalyzer::new(&manifest_path).unwrap();
         let files = analyzer.find_rust_files().unwrap();
-        assert_eq!(files, vec![member_src.join("lib.rs")]);
+        let paths: Vec<_> = files.into_iter().map(|(path, _, _)| path).collect();
+        assert_eq!(paths, vec![member_src.join("lib.rs")]);
     }
 
     #[test]

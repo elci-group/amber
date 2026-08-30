@@ -69,7 +69,11 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
         dependency_count = deps.len(),
         "analyzing contextual usage"
     );
-    let usage_analyzer = UsageAnalyzer::new(manifest_path)?;
+    let usage_analyzer = if let Some(snapshot_path) = &cli.snapshot {
+        UsageAnalyzer::with_snapshot(manifest_path, snapshot_path)?
+    } else {
+        UsageAnalyzer::new(manifest_path)?
+    };
     let usage_stats = usage_analyzer.analyze_all_usage(&deps)?;
     diag!(
         "  {} Usage patterns extracted for {} crates",

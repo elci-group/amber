@@ -19,6 +19,7 @@ pub mod list;
 #[cfg(feature = "migrate")]
 pub mod migrate;
 pub mod paths;
+pub mod portfolio;
 pub mod replace;
 pub mod roadmap;
 pub mod score;
@@ -162,6 +163,34 @@ target project root. The file can set the threshold, a required/forbidden \
 crate policy, and the replacement-library location."
     )]
     pub config: Option<PathBuf>,
+
+    /// Path to a bound-snapshot/v1 JSON file to use as the source tree
+    #[arg(
+        long,
+        long_help = "\
+Use a bound snapshot instead of walking the filesystem for source files. \
+Cargo metadata is still loaded from the project manifest."
+    )]
+    pub snapshot: Option<PathBuf>,
+
+    /// Recursively run the selected command across every project found under
+    /// `path` (or the home directory, when `path` is left at its default)
+    #[arg(
+        long,
+        long_help = "\
+Discover every Amber-compatible Cargo project under the target `path` — or, \
+when `path` is left at its default, under the user's home directory — and \
+run the selected command against each one in turn, reusing the same flags \
+for every project. Directories named `.git`, `target`, `node_modules`, and \
+similar build/VCS/cache directories are skipped. A project that fails is \
+reported and skipped rather than aborting the run. See --max-projects to \
+cap how many projects are visited."
+    )]
+    pub portfolio: bool,
+
+    /// Maximum number of projects a `--portfolio` run will visit
+    #[arg(long, default_value_t = 64)]
+    pub max_projects: usize,
 
     /// Use the Padagonia replacement library (requires `library` feature)
     #[cfg(feature = "library")]
@@ -393,6 +422,11 @@ pub fn execute(cli: &Cli) -> Result<i32> {
         OutputFormat::Json | OutputFormat::Pr | OutputFormat::Sarif
     ) {
         roadmap::print_banner();
+    }
+
+    if cli.portfolio {
+        let root = portfolio::resolve_root(&cli.path);
+        return portfolio::run_portfolio(cli, &root, cli.max_projects);
     }
 
     let manifest_path = if cli.path.join("Cargo.toml").exists() {

@@ -14,6 +14,7 @@ use crate::config::Config;
 use crate::metadata::offline::OfflineProvider;
 use crate::metadata::rustsec::RustSecEnricher;
 use crate::reporting::formatters::JsonReporter;
+use crate::reporting::style::Colorize;
 use crate::scoring::classifier::SafetyClassifier;
 use padagonia::{KeyId, Node, Provenance, Scalar, Store, StringTableExt};
 use serde::{Deserialize, Serialize};
@@ -94,8 +95,12 @@ impl Daemon {
         loop {
             let summary = self.scan_once()?;
             println!(
-                "amber daemon: scanned {} project(s), analyzed {}, cached {}, skipped {}",
-                summary.discovered, summary.analyzed, summary.cached, summary.skipped
+                "{} amber daemon: scanned {} project(s), analyzed {}, cached {}, skipped {}",
+                "\u{25c8}".bright_yellow(),
+                summary.discovered.to_string().bold(),
+                summary.analyzed.to_string().bold(),
+                summary.cached.to_string().bold(),
+                summary.skipped.to_string().bold()
             );
             if self.config.once {
                 return Ok(0);
