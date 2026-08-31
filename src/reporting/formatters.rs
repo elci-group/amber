@@ -3,8 +3,7 @@
 use crate::amber_anyhow::Result;
 use crate::reporting::style::Colorize;
 use form3::table::{
-    modifiers::UTF8_ROUND_CORNERS, Attribute, Cell, CellAlignment, ColumnConstraint,
-    ContentArrangement, Table, Width,
+    Attribute, Cell, CellAlignment, ColumnConstraint, ContentArrangement, Modifier, Table, Width,
 };
 use serde_json::json;
 use std::collections::HashMap;
@@ -69,7 +68,7 @@ impl ConsoleReporter {
     pub fn print_dependency_list(&self, deps: &[Dependency]) {
         let mut table = Table::new();
         table.set_header(vec!["Crate", "Version", "Kind", "Transitive Deps"]);
-        table.apply_modifier(UTF8_ROUND_CORNERS);
+        table.apply_modifier(Modifier::UTF8_ROUND_CORNERS);
 
         for dep in deps {
             let kind = format!("{:?}", dep.kind);
@@ -113,7 +112,7 @@ impl ConsoleReporter {
 
         let mut table = Table::new();
         table.set_header(vec!["Dimension", "Score", "Bar"]);
-        table.apply_modifier(UTF8_ROUND_CORNERS);
+        table.apply_modifier(Modifier::UTF8_ROUND_CORNERS);
 
         let dims = [
             ("Usage Simplicity", score.dimensions.usage_simplicity),
@@ -199,7 +198,7 @@ impl ConsoleReporter {
             Cell::new("APIs Used").add_attribute(Attribute::Bold),
             Cell::new("Recommendation").add_attribute(Attribute::Bold),
         ]);
-        table.apply_modifier(UTF8_ROUND_CORNERS);
+        table.apply_modifier(Modifier::UTF8_ROUND_CORNERS);
         table.set_content_arrangement(ContentArrangement::Dynamic);
         table.set_constraints(vec![
             ColumnConstraint::LowerBoundary(Width::Fixed(16)),
@@ -518,7 +517,7 @@ impl EmojiReporter {
             Cell::new("APIs").add_attribute(Attribute::Bold),
             Cell::new("Recommendation").add_attribute(Attribute::Bold),
         ]);
-        table.apply_modifier(UTF8_ROUND_CORNERS);
+        table.apply_modifier(Modifier::UTF8_ROUND_CORNERS);
         table.set_content_arrangement(ContentArrangement::Dynamic);
         table.set_constraints(vec![
             ColumnConstraint::LowerBoundary(Width::Fixed(16)),
