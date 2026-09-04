@@ -64,6 +64,19 @@ Feature-gated: `--library` / `--no-library` (`library` feature), `--online`
 - `daemon [options]` — (`daemon` feature) monitor a directory tree for Cargo
   projects, create `.amber/daemon.toml` markers, and cache JSON analysis
   snapshots in Padagonia.
+- `benchmark <crate> [options]` — (`jeenome` feature) benchmark a dependency
+  replacement using behavioral analysis: compare runtime behavior before and
+  after replacing the crate using `strace` capture and behavioral-pattern
+  scoring, reporting a confidence score for behavioral equivalence.
+
+### Benchmark options
+
+- `-o`, `--out-dir <DIR>` — output directory for the generated replacement
+  and captured traces (default `amber_bench`).
+- `--cargo-cmd <CMD>` — cargo command to benchmark, e.g. `build`, `test`,
+  `run --bin main` (default `build`).
+- `--skip-baseline` — skip baseline capture (reuse an existing trace).
+- `--skip-replacement` — skip replacement capture (reuse an existing trace).
 
 ### Daemon options
 
@@ -96,6 +109,8 @@ amber score anyhow
 amber replace serde --out-dir out
 amber directives colored -o colored.md
 amber daemon --once --root ~/work
+# Behaviorally benchmark replacing `anyhow` (jeenome feature build)
+amber benchmark anyhow --cargo-cmd test
 ```
 
 ## SEE ALSO
