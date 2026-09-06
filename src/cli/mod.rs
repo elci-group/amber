@@ -23,6 +23,7 @@ pub mod portfolio;
 pub mod replace;
 pub mod roadmap;
 pub mod score;
+pub mod update;
 
 use crate::amber_anyhow::{Context, Result};
 use crate::reporting::style::Colorize;
@@ -268,6 +269,8 @@ if it does not compile, no file is reported as ready.")]
     },
     /// Show Amber's internal module roadmap
     Roadmap,
+    /// Clone the latest amber source and install it with `baby --user`
+    Update,
     /// Generate a scoped technical directive for a dependency
     #[command(long_about = "\
 Emit a focused, implementation-ready directive describing how to replace the \
@@ -480,6 +483,7 @@ fn init_tracing(verbose: u8) {
 pub fn run(cli: &Cli, manifest_path: &Path) -> Result<i32> {
     match &cli.command {
         Some(Commands::Roadmap) => roadmap::run(),
+        Some(Commands::Update) => update::run(),
         Some(Commands::List) => list::run(cli, manifest_path),
         Some(Commands::Score { crate_name }) => score::run(cli, manifest_path, crate_name),
         Some(Commands::Replace {
