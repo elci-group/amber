@@ -211,16 +211,28 @@ impl RepositoryAnalyzer {
         dep_package: Option<&&Package>,
         transitive_deps: Vec<String>,
     ) -> Dependency {
-        let source = dep_package.map_or(DependencySource::CratesIo, |pkg| match &pkg.source {
-            Some(src) if src.is_crates_io() => DependencySource::CratesIo,
-            Some(src) => DependencySource::Registry(src.to_string()),
-            None => DependencySource::Path {
-                path: pkg
-                    .manifest_path
-                    .parent()
-                    .map(std::string::ToString::to_string)
-                    .unwrap_or_default(),
-            },
+        let source = dep_package.map_or(DependencySource::CratesIo, |pkg| {
+            // Workspace members are internal, not third-party dependencies.
+            if self.metadata.workspace_members.contains(&pkg.id) {
+                return DependencySource::WorkspaceMember {
+                    path: pkg
+                        .manifest_path
+                        .parent()
+                        .map(std::string::ToString::to_string)
+                        .unwrap_or_default(),
+                };
+            }
+            match &pkg.source {
+                Some(src) if src.is_crates_io() => DependencySource::CratesIo,
+                Some(src) => DependencySource::Registry(src.to_string()),
+                None => DependencySource::Path {
+                    path: pkg
+                        .manifest_path
+                        .parent()
+                        .map(std::string::ToString::to_string)
+                        .unwrap_or_default(),
+                },
+            }
         });
 
         let kind = match dep.kind {

@@ -104,6 +104,27 @@ and roll back on failure.
 (\fBdaemon\fR feature) Monitor a directory tree for Cargo projects, create
 .B .amber/daemon.toml
 markers, and cache JSON analysis snapshots in Padagonia.
+.TP
+.BI benchmark " crate" " [\fB\-o\fR dir] [\fB\-\-cargo\-cmd\fR cmd]"
+(\fBjeenome\fR feature) Benchmark a dependency replacement using behavioral
+analysis: compare the runtime behavior of a project before and after replacing
+the crate, using \fBstrace\fR capture and behavioral-pattern scoring, and
+report a confidence score for behavioral equivalence.
+.SS Benchmark options
+.TP
+.BI \-o " dir" "\fR, \fB\-\-out\-dir " dir
+Output directory for the generated replacement and captured traces.
+Default: \fBamber_bench\fR.
+.TP
+.BI \-\-cargo\-cmd " cmd"
+Cargo command to benchmark, e.g. \fBbuild\fR, \fBtest\fR, \fBrun --bin main\fR.
+Default: \fBbuild\fR.
+.TP
+.B \-\-skip\-baseline
+Skip baseline capture (reuse an existing trace if available).
+.TP
+.B \-\-skip\-replacement
+Skip replacement capture (reuse an existing trace if available).
 .SS Daemon options
 .TP
 .BI \-\-root " dir"
@@ -213,6 +234,9 @@ amber directives colored \-o colored.md
 
 # One daemon scan of a workspace tree
 amber daemon \-\-once \-\-root ~/work
+
+# Behaviorally benchmark replacing a crate (jeenome feature build)
+amber benchmark anyhow \-\-cargo\-cmd test
 .fi
 .SH SEE ALSO
 .BR cargo (1)

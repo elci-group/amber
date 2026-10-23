@@ -90,6 +90,8 @@ pub enum ReplacementRecommendation {
     Block,
     /// Security critical - never replace
     SecurityBlock,
+    /// Internal workspace member - keep, not a third-party candidate
+    Keep,
 }
 
 impl ReplacementRecommendation {
@@ -101,6 +103,7 @@ impl ReplacementRecommendation {
             Self::Caution => "Replace only with extensive differential testing",
             Self::Block => "Do not replace - risk exceeds value",
             Self::SecurityBlock => "NEVER replace - security critical dependency",
+            Self::Keep => "Internal workspace member - keep",
         }
     }
 }
@@ -208,6 +211,13 @@ impl SafetyClassifier {
 
         // Determine classification and recommendation
         let (classification, recommendation) = Self::classify(dep, overall, &dimensions, usage);
+
+        if recommendation == ReplacementRecommendation::Keep {
+            reasoning.insert(
+                0,
+                "Internal workspace member — not a third-party replacement candidate".to_string(),
+            );
+        }
 
         let rule_applied = if NEVER_REPLACE.contains(&dep.name.as_str()) {
             "NEVER_REPLACE list match"
@@ -370,6 +380,14 @@ impl SafetyClassifier {
         dimensions: &ScoreDimensions,
         usage: &CrateUsage,
     ) -> (SafetyClass, ReplacementRecommendation) {
+        // Internal workspace members are not third-party replacement candidates.
+        if matches!(dep.source, crate::analysis::types::DependencySource::WorkspaceMember { .. }) {
+            return (
+                SafetyClass::SafeToReplace,
+                ReplacementRecommendation::Keep,
+            );
+        }
+
         // Security-critical override
         if NEVER_REPLACE.contains(&dep.name.as_str()) {
             return (
@@ -484,6 +502,37 @@ mod tests {
     }
 
     #[test]
+    fn workspace_member_is_kept() {
+        let classifier = SafetyClassifier::new();
+        let mut dep = dummy_dependency("velocity-core");
+        dep.source = DependencySource::WorkspaceMember {
+            path: "crates/velocity-core".to_string(),
+        };
+        let usage = CrateUsage {
+            crate_name: "velocity-core".to_string(),
+            call_sites: vec![crate::analysis::types::CallSite {
+                function_name: "foo".to_string(),
+                kind: crate::analysis::types::UsageKind::FunctionCall,
+                location: crate::analysis::types::Location::new("src/lib.rs", 10, 5),
+                context: "path expression: velocity_core::foo".to_string(),
+            }],
+            ..Default::default()
+        };
+        let score = classifier.score_dependency(&dep, &usage);
+
+        assert_eq!(score.classification, SafetyClass::SafeToReplace);
+        assert_eq!(score.recommendation, ReplacementRecommendation::Keep);
+        assert!(
+            score
+                .reasoning
+                .iter()
+                .any(|r| r.contains("workspace member")),
+            "expected workspace-member reasoning, got {:?}",
+            score.reasoning
+        );
+    }
+
+    #[test]
     fn crypto_dependency_is_security_critical() {
         let classifier = SafetyClassifier::new();
         let dep = dummy_dependency("ring");
@@ -569,6 +618,7 @@ mod tests {
             ReplacementRecommendation::Caution,
             ReplacementRecommendation::Block,
             ReplacementRecommendation::SecurityBlock,
+            ReplacementRecommendation::Keep,
         ] {
             assert!(!rec.description().is_empty());
         }

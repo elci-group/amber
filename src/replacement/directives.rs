@@ -243,7 +243,9 @@ impl DirectiveGenerator {
                     dep.name
                 ));
             }
-            ReplacementRecommendation::Block | ReplacementRecommendation::SecurityBlock => {
+            ReplacementRecommendation::Block
+            | ReplacementRecommendation::SecurityBlock
+            | ReplacementRecommendation::Keep => {
                 steps.push(format!(
                     "Do not proceed with replacing `{}` unless the blockers are resolved.",
                     dep.name

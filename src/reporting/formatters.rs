@@ -20,6 +20,7 @@ struct ScoreSummary {
     medium_risk: usize,
     high_risk: usize,
     do_not_replace: usize,
+    keep: usize,
     above_threshold: usize,
 }
 
@@ -30,15 +31,22 @@ impl ScoreSummary {
         let mut medium_risk = 0;
         let mut high_risk = 0;
         let mut do_not_replace = 0;
+        let mut keep = 0;
         let mut above_threshold = 0;
 
         for score in scores {
-            match score.classification {
-                SafetyClass::SafeToReplace => safe_to_replace += 1,
-                SafetyClass::LowRisk => low_risk += 1,
-                SafetyClass::MediumRisk => medium_risk += 1,
-                SafetyClass::HighRisk => high_risk += 1,
-                SafetyClass::DoNotReplace | SafetyClass::SecurityCritical => do_not_replace += 1,
+            if score.recommendation == ReplacementRecommendation::Keep {
+                keep += 1;
+            } else {
+                match score.classification {
+                    SafetyClass::SafeToReplace => safe_to_replace += 1,
+                    SafetyClass::LowRisk => low_risk += 1,
+                    SafetyClass::MediumRisk => medium_risk += 1,
+                    SafetyClass::HighRisk => high_risk += 1,
+                    SafetyClass::DoNotReplace | SafetyClass::SecurityCritical => {
+                        do_not_replace += 1;
+                    }
+                }
             }
             if score.overall >= threshold {
                 above_threshold += 1;
@@ -51,6 +59,7 @@ impl ScoreSummary {
             medium_risk,
             high_risk,
             do_not_replace,
+            keep,
             above_threshold,
         }
     }
@@ -178,6 +187,12 @@ impl ConsoleReporter {
             "  {} High risk / Blocked",
             format!("{}", summary.high_risk + summary.do_not_replace).red()
         );
+        if summary.keep > 0 {
+            println!(
+                "  {} Internal workspace members (kept)",
+                format!("{}", summary.keep).cyan()
+            );
+        }
         println!();
         println!(
             "  {} dependencies above threshold ({})",
@@ -230,6 +245,7 @@ impl ConsoleReporter {
                 ReplacementRecommendation::Caution => "Caution".bright_red(),
                 ReplacementRecommendation::Block => "Block".red(),
                 ReplacementRecommendation::SecurityBlock => "SECURE".red().bold(),
+                ReplacementRecommendation::Keep => "Keep".cyan(),
             };
 
             let score_colored = if score.overall >= 75 {
@@ -640,6 +656,7 @@ impl EmojiReporter {
             ReplacementRecommendation::Caution => "⚠️  Caution",
             ReplacementRecommendation::Block => "🛑 Block",
             ReplacementRecommendation::SecurityBlock => "🛡️  Secure",
+            ReplacementRecommendation::Keep => "🏠 Keep",
         }
     }
 
@@ -703,6 +720,7 @@ impl JsonReporter {
                             super::super::scoring::classifier::ReplacementRecommendation::Caution => "caution",
                             super::super::scoring::classifier::ReplacementRecommendation::Block => "block",
                             super::super::scoring::classifier::ReplacementRecommendation::SecurityBlock => "security_block",
+                            super::super::scoring::classifier::ReplacementRecommendation::Keep => "keep",
                         },
                     },
                     "usage": {
@@ -718,6 +736,11 @@ impl JsonReporter {
                         "maintenance_score": dep.maintenance_score,
                         "cve_count": dep.cve_count,
                     },
+                    "source": dep.source,
+                    "is_workspace_member": matches!(
+                        dep.source,
+                        crate::analysis::types::DependencySource::WorkspaceMember { .. }
+                    ),
                     "reasoning": score.reasoning,
                 })
             })
@@ -1168,6 +1191,7 @@ mod tests {
             (ReplacementRecommendation::Caution, "caution"),
             (ReplacementRecommendation::Block, "block"),
             (ReplacementRecommendation::SecurityBlock, "security_block"),
+            (ReplacementRecommendation::Keep, "keep"),
         ] {
             let dep = sample_dep("sample");
             let score = score_with(50, SafetyClass::MediumRisk, rec);
@@ -1440,6 +1464,14 @@ mod tests {
                     ReplacementRecommendation::SecurityBlock,
                 ),
             ),
+            (
+                "keep",
+                score_with(
+                    0,
+                    SafetyClass::SafeToReplace,
+                    ReplacementRecommendation::Keep,
+                ),
+            ),
         ];
         let deps: Vec<_> = deps_and_scores
             .iter()
@@ -1467,6 +1499,10 @@ mod tests {
             (
                 SafetyClass::SecurityCritical,
                 ReplacementRecommendation::SecurityBlock,
+            ),
+            (
+                SafetyClass::SafeToReplace,
+                ReplacementRecommendation::Keep,
             ),
         ] {
             reporter.print_score_card("sample", &score_with(50, class, rec), &sample_usage());
@@ -1527,6 +1563,10 @@ mod tests {
                 SafetyClass::SecurityCritical,
                 ReplacementRecommendation::SecurityBlock,
             ),
+            (
+                SafetyClass::SafeToReplace,
+                ReplacementRecommendation::Keep,
+            ),
         ] {
             reporter.print_score_card("sample", &score_with(50, class, rec), &sample_usage());
         }
@@ -1574,6 +1614,14 @@ mod tests {
                     5,
                     SafetyClass::DoNotReplace,
                     ReplacementRecommendation::Block,
+                ),
+            ),
+            (
+                "keep",
+                score_with(
+                    0,
+                    SafetyClass::SafeToReplace,
+                    ReplacementRecommendation::Keep,
                 ),
             ),
         ];
