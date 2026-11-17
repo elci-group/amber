@@ -33,13 +33,13 @@ dependencies = [
 
 [[package]]
 name = "amber"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "bound-core",
  "cargo_metadata",
  "clap",
  "criterion",
- "form3",
+ "form3 0.1.1 (git+https://github.com/elci-group/3form?branch=main)",
  "padagonia",
  "proc-macro2",
  "rustsec",
@@ -255,14 +255,16 @@ version = "0.1.5"
 dependencies = [
  "csv",
  "dirs",
- "form3",
+ "form3 0.1.1 (git+https://github.com/elci-group/3form?rev=0a3d331a771a1eb6266839c701ee213a44e5f514)",
  "ignore",
+ "mesut",
  "once_cell",
  "regex",
  "rusqlite",
  "serde",
  "serde_json",
  "sha2",
+ "tokio",
  "toml 0.8.23",
  "ureq",
 ]
@@ -782,6 +784,12 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 [[package]]
 name = "form3"
 version = "0.1.1"
+source = "git+https://github.com/elci-group/3form?branch=main#5066fc631c41bcdee6a864ce81ad9968d723078a"
+
+[[package]]
+name = "form3"
+version = "0.1.1"
+source = "git+https://github.com/elci-group/3form?rev=0a3d331a771a1eb6266839c701ee213a44e5f514#0a3d331a771a1eb6266839c701ee213a44e5f514"
 
 [[package]]
 name = "form_urlencoded"
@@ -989,6 +997,12 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "hermit-abi"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e17592d60ebacc7d5e169f4663c5f84f9161cc90328abcfe8456f41e4dfcb284"
 
 [[package]]
 name = "http"
@@ -1356,6 +1370,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23fb14cb19457329c82206317a5663005a4d404783dc74f4252769b0d5f42856"
 
 [[package]]
+name = "lock_api"
+version = "0.4.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
 name = "log"
 version = "0.4.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1389,6 +1412,153 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1219ed1b7f229ee7104d281dd01d6802fe28bb6e95d292942c4daacdeb798c0"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "mesut"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-blocking",
+ "mesut-core",
+ "mesut-executor",
+ "mesut-observe",
+ "mesut-rayon",
+ "mesut-router",
+ "mesut-runtime",
+ "mesut-scheduler",
+ "mesut-tokio",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "mesut-blocking"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "mesut-executor",
+ "num_cpus",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "mesut-core"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "parking_lot",
+ "serde",
+ "thiserror 1.0.69",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "mesut-executor"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "mesut-observe"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "mesut-core",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "mesut-rayon"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "mesut-executor",
+ "num_cpus",
+ "parking_lot",
+ "rayon",
+ "thiserror 1.0.69",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "mesut-router"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "mesut-core",
+ "mesut-executor",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "mesut-runtime"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "mesut-executor",
+ "mesut-observe",
+ "mesut-router",
+ "mesut-scheduler",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "mesut-scheduler"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "mesut-executor",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "mesut-tokio"
+version = "0.1.0"
+source = "git+https://github.com/elci-group/mesut?rev=5397efdd0a1621ad0177461af0732a4fa21975d4#5397efdd0a1621ad0177461af0732a4fa21975d4"
+dependencies = [
+ "async-trait",
+ "mesut-core",
+ "mesut-executor",
+ "parking_lot",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -1484,6 +1654,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_cpus"
+version = "1.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91df4bbde75afed763b708b7eee1e8e7651e02d97f6d5dd763e89367e957b23b"
+dependencies = [
+ "hermit-abi",
+ "libc",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1546,6 +1726,29 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "parking_lot"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
+dependencies = [
+ "lock_api",
+ "parking_lot_core",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.9.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "redox_syscall",
+ "smallvec",
+ "windows-link",
 ]
 
 [[package]]
@@ -1790,6 +1993,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_syscall"
+version = "0.5.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
 name = "redox_users"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1976,6 +2188,12 @@ checksum = "91c1b7e4904c873ef0710c1f407dde2e6287de2bebc1bbbf7d430bb7cbffd939"
 dependencies = [
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "scopeguard"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "secrecy"
@@ -2318,6 +2536,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
@@ -2659,6 +2878,18 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "uuid"
+version = "1.29.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c14b15dffa2f4bd712103e857140aa04a4f2ff6e955c77d7eb8e53ee02a3b64"
+dependencies = [
+ "getrandom 0.4.3",
+ "js-sys",
+ "serde_core",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "valuable"
