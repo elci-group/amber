@@ -515,7 +515,14 @@ impl UsageVisitor<'_> {
             None => return,
         };
 
-        if let Some(crate_name) = self.resolve_crate(&first) {
+        // Resolve either as a crate name/alias or as an item imported from a
+        // tracked crate (e.g. `SigningKey::generate` after
+        // `use ed25519_dalek::SigningKey`).
+        let crate_name = self
+            .resolve_crate(&first)
+            .or_else(|| self.imported_name_map.get(&first).cloned());
+
+        if let Some(crate_name) = crate_name {
             let name = expr
                 .path
                 .segments
@@ -538,7 +545,11 @@ impl UsageVisitor<'_> {
             None => return,
         };
 
-        if let Some(crate_name) = self.resolve_crate(&first) {
+        let crate_name = self
+            .resolve_crate(&first)
+            .or_else(|| self.imported_name_map.get(&first).cloned());
+
+        if let Some(crate_name) = crate_name {
             let name = ty
                 .path
                 .segments
@@ -630,7 +641,15 @@ impl UsageVisitor<'_> {
                     .map(|s| s.ident.to_string())
                     .unwrap_or_default();
 
-                if let Some(crate_name) = self.imported_name_map.get(&first_seg).cloned() {
+                // Imported macros: use thiserror::Error; #[derive(Error)]
+                let crate_name = self
+                    .imported_name_map
+                    .get(&first_seg)
+                    .cloned()
+                    // Fully-qualified macros: #[derive(thiserror::Error)]
+                    .or_else(|| self.resolve_crate(&first_seg));
+
+                if let Some(crate_name) = crate_name {
                     let name = path
                         .segments
                         .last()
@@ -1039,6 +1058,27 @@ mod tests {
     }
 
     #[test]
+    fn detects_fully_qualified_derive_attribute() {
+        let deps = vec![dep_named("thiserror")];
+        let mut usage = HashMap::new();
+        let code = r"
+            #[derive(Debug, thiserror::Error)]
+            struct Foo;
+        ";
+        UsageAnalyzer::analyze_file_usage(code, &deps, &mut usage, "test.rs");
+
+        let thiserror = usage.get("thiserror").unwrap();
+        assert!(
+            thiserror
+                .call_sites
+                .iter()
+                .any(|c| c.kind == UsageKind::Attribute && c.function_name == "Error"),
+            "expected fully-qualified derive attribute, got {:?}",
+            thiserror.call_sites
+        );
+    }
+
+    #[test]
     fn detects_method_call_heuristic() {
         let deps = vec![dep_named("my_crate")];
         let mut usage = HashMap::new();
@@ -1055,6 +1095,28 @@ mod tests {
                 .iter()
                 .any(|c| c.kind == UsageKind::MethodCall),
             "expected method call attribution"
+        );
+    }
+
+    #[test]
+    fn detects_imported_type_associated_function() {
+        let deps = vec![dep_named("ed25519-dalek")];
+        let mut usage = HashMap::new();
+        let code = r"
+            use ed25519_dalek::SigningKey;
+            fn demo() {
+                let key = SigningKey::generate(&mut rand::rngs::OsRng);
+            }
+        ";
+        UsageAnalyzer::analyze_file_usage(code, &deps, &mut usage, "test.rs");
+
+        let ed = usage.get("ed25519-dalek").unwrap();
+        assert!(
+            ed.call_sites
+                .iter()
+                .any(|c| c.kind == UsageKind::FunctionCall && c.function_name == "generate"),
+            "expected associated function call on imported type, got {:?}",
+            ed.call_sites
         );
     }
 

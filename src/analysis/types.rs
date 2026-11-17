@@ -36,6 +36,12 @@ pub enum DependencySource {
     Git { url: String, rev: Option<String> },
     Path { path: String },
     Registry(String),
+    /// A crate that is itself a member of the workspace being analyzed.
+    ///
+    /// Internal workspace members should not be treated as third-party
+    /// replacement candidates, even if they appear in another member's
+    /// dependency list.
+    WorkspaceMember { path: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

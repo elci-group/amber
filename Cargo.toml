@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 [package]
 name = "amber"
-version = "0.3.5"
+version = "0.3.9"
 edition = "2021"
 authors = ["SVCH <svch@seriousaboutsolutions.co.uk>"]
 description = "Autonomous dependency reduction engine for Rust"
@@ -40,7 +40,7 @@ serde_json = "1.0"
 tracing = "0.1"
 bound-core = { path = "../bound/crates/bound-core" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-form3 = { path = "../3form" }
+form3 = { git = "https://github.com/elci-group/3form", branch = "main" }
 ureq = { version = "2.10", optional = true, features = ["json"] }
 rustsec = { version = "0.31", default-features = false }
 # Git dependency on the public padagonia repository. Once padagonia is
