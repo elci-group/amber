@@ -84,6 +84,33 @@ fn json_format_stdout_is_pure_json() {
 }
 
 #[test]
+fn zero_dependency_crate_still_emits_a_json_report() {
+    // A crate without dependencies is a clean result, not an error: machine
+    // formats must still put a parsable (empty) report on stdout.
+    let path = fixture_path("zero_dependency_project");
+    let (status, stdout, stderr) = run(&["--format", "json", path.to_str().unwrap(), "analyze"]);
+    assert!(
+        status.success(),
+        "amber failed: {status}
+{stderr}"
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(stdout.trim()).expect("stdout is not valid JSON");
+    assert_eq!(parsed["total_dependencies"], 0);
+    assert_eq!(parsed["results"].as_array().map(Vec::len), Some(0));
+    assert!(stderr.contains("No dependencies found"));
+}
+
+#[test]
+fn zero_dependency_crate_console_output_is_unchanged() {
+    let path = fixture_path("zero_dependency_project");
+    let (status, stdout, _) = run(&[path.to_str().unwrap(), "analyze"]);
+    assert!(status.success());
+    assert!(stdout.contains("No dependencies found"));
+    assert!(!stdout.contains("Amber Dependency Analysis Report"));
+}
+
+#[test]
 fn sarif_format_stdout_is_pure_json() {
     let path = fixture_path("sample_project");
     let (status, stdout, _stderr) = run(&[

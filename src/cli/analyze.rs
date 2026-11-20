@@ -53,7 +53,12 @@ pub fn run(cli: &Cli, manifest_path: &Path, output_path: Option<&Path>) -> Resul
             "{}",
             "No dependencies found. Is this a Rust project?".yellow()
         );
-        return Ok(0);
+        // A crate without dependencies is a valid, clean result. Machine
+        // formats still emit their (empty) report so callers such as uni
+        // can parse stdout instead of finding it blank.
+        if !machine_output {
+            return Ok(0);
+        }
     }
 
     diag!(
